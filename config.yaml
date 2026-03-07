@@ -1,0 +1,57 @@
+# モデル設定（llama-cpp-python / GGUF形式）
+model:
+  path: "./models/Qwen3-30B-A3B-Q4_K_M.gguf"
+  n_gpu_layers: -1
+  n_ctx: 32768
+  n_threads: 4
+
+# サンプリング設定
+sampling:
+  temperature: 0.6
+  top_p: 0.95
+  top_k: 20
+  max_tokens: 8192
+
+# API設定
+api:
+  host: "127.0.0.1"
+  port: 8765
+
+# 表示設定
+display:
+  show_thinking: true
+  stream_output: true
+
+# Stable Diffusion設定（WebUI Forge 2）
+stable_diffusion:
+  enabled: true
+  api_url: "http://127.0.0.1:7860"
+  width: 768
+  height: 512
+  steps: 30
+  cfg_scale: 7.0
+  sampler_name: "Euler"
+
+  # 最終的に SD へ送られるプロンプト:
+  #   "{prompt_prefix}, {キャラのsd_prompt}, {prompt_bg}, {prompt_lighting}, {prompt_camera}, {prompt_suffix}"
+  prompt_prefix: "masterpiece, best quality,"
+  prompt_suffix: ""
+
+  # 背景・場所
+  # 例: "interrogation room, dark room, concrete wall"
+  #     "police station, indoor"
+  prompt_bg: "interrogation room, dark concrete wall,"
+
+  # ライティング
+  # 例: "cinematic lighting, dramatic side lighting, hard light"
+  #     "neon light, soft light"
+  prompt_lighting: "cinematic lighting,"
+
+  # カメラアングル・構図
+  # 例: "close-up", "medium shot", "cowboy shot"
+  #     "straight-on", "slight low angle", "looking at viewer"
+  prompt_camera: "solo, portrait, looking at viewer"
+
+  # ネガティブプロンプトの共通部分（キャラのsd_negativeに付加）
+  negative_prefix: ""
+  negative_suffix: ""
