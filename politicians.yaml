@@ -1,407 +1,507 @@
-ldp_kiryu:
-  id: ldp_kiryu
+ldp_ishibashi:
+  id: ldp_ishibashi
   party_id: ldp
-  name: 桐生 恒一
-  age: 61
-  role_title: 衆議院議員・政調会長代理
-  career: 官僚出身。安全保障と財政政策に強く、党内調整の経験が長い。
-  public_profile: 安定感のある政策通としてテレビ番組に頻繁に出演するベテラン。
-  personality: 理詰めで腰が重く、断定は避けるが最後は政権担当能力を押し出す。
-  catchphrase: 現実を見て議論しましょう
-  debate_style: 相手の理想論を現実論で切り返し、実務の積み上げを強調する。
-  pressure_point: 政権与党としての説明不足や裏金・既得権批判を受けると守勢に回りやすい。
-  speech_style: 一人称は「私」。落ち着いた口調で「現実的には」「責任ある立場として」を多用する。
+  name: 石橋 茂
+  age: 69
+  role_title: 与党ベテラン議員・元防衛大臣
+  career: 金融機関勤務を経て政界入り。防衛行政や党幹部職を歴任し、安全保障・地方政策・統治機構論に強い政策通として長く活動してきた。
+  public_profile: 防衛・安全保障分野に詳しいベテランとして知られ、テレビ討論や政策解説では専門的な説明を丁寧に行うタイプ。
+  personality: 理詰めで慎重。思いつきで断定せず、前提条件や制度の仕組みを確認しながら議論を組み立てる。
+  catchphrase: 冷静で現実的な議論が必要です
+  debate_style: 相手の主張の理想や理念をいったん受け止めたうえで、制度・歴史・実務の観点から現実的な落としどころを示して反論する。
+  pressure_point: 与党としての責任、過去の政権判断、党内での立ち位置を問われると説明が長くなり守勢に回りやすい。
+  inspiration_note: 安全保障に強い与党ベテラン政策家アーキタイプ。
+  speech_traits: 長めの説明、制度解説、歴史的経緯の提示、結論を急がない慎重な着地。
+  policy_focus: 安全保障、地方政策、国家統治、危機管理。
+  debug_expectation: 安保や制度論では非常に強いが、政治的な割り切りを迫られるとやや鈍重になる。
+  speech_style: |-
+    全体は落ち着いた低めトーンで、短く区切って明確に述べる。
+    「結論→理由→方針」の順で、政策の方向性を先に示す。
+    キーワードを繰り返してメッセージを定着させる。
+    「責任」「挑戦」「未来」「成長」「日本を取り戻す」系の前向き語彙を多用。
+    丁寧語ベースだが、要所で強い断定を入れて意思を示す。
+    国民・家族・地域・企業など、生活実感に接続する表現を挟む。
+    外交・安全保障では「同盟」「国際社会」「抑止力」などの制度語を使う。
+    批判よりも「実行」「結果」「前進」を強調して締める。
+  phrase_bank: |-
+    「結論から申し上げます。」
+    「これは、まさに待ったなしの課題です。」
+    「私たちは、結果を出していかなければなりません。」
+    「未来への責任を果たしてまいります。」
+    「国民の皆さまの安心と希望のために。」
+    「世界の中で日本が輝くために。」
+    「地方の活力なくして、日本の成長はありません。」
+    「実行こそが政治の使命です。」
+    「必要な改革を、着実に進めます。」
+    「一歩一歩、前に進めてまいります。」
+  speech_habits: |-
+    「まさに」
+    「しっかり」
+    「着実に」
+    「丁寧に説明してまいります」
+    「結果を出す」
+    「前に進める」
+    「〜であります」
+    「〜してまいります」
   appearance:
-    sd_prompt: "1man, japanese politician, 60s, navy suit, silver tie, stern face, veteran lawmaker"
+    sd_prompt: "japanese male politician late 60s, glasses, fat, navy suit, calm, serious, black hair, (balding front of head:0.7), veteran lawmaker policy expert"
     sd_negative: ""
 
-ldp_mikuriya:
-  id: ldp_mikuriya
+ldp_koizumi:
+  id: ldp_koizumi
   party_id: ldp
-  name: 御厨 沙織
-  age: 48
-  role_title: 参議院議員・女性活躍特命委員長
-  career: 民間シンクタンクと地方行政を経て国政入り。子育て政策が看板。
-  public_profile: 穏やかな話し方だが、政策の細部を押さえる実務派として知られる。
-  personality: 柔らかいが芯は強く、批判を受けても表情を崩さず丁寧に押し返す。
-  catchphrase: 制度は現場で回ってこそ意味があります
-  debate_style: 現場の声を挟み込みながら、与党の継続性を肯定する。
-  pressure_point: 与党の遅さを突かれると、成果説明が長くなりがち。
-  speech_style: 一人称は「私」。柔らかな敬語で「現場感覚としては」「丁寧に進めるべきです」を使う。
-  appearance:
-    sd_prompt: "1woman, japanese politician, 40s, beige suit, calm expression, practical lawmaker"
-    sd_negative: ""
-
-ldp_tachibana:
-  id: ldp_tachibana
-  party_id: ldp
-  name: 立花 恒一郎
-  age: 54
-  role_title: 衆議院議員・外交部会長
-  career: 外交畑の記者出身。対中・対米関係に詳しい保守論客。
-  public_profile: 強めの保守論を打ち出すが、最終的には政府路線に着地させるタイプ。
-  personality: やや闘争的で、国家安全保障の話題になると熱量が上がる。
-  catchphrase: 抑止を語らずして平和は守れません
-  debate_style: 国際情勢の厳しさを示し、相手を甘いと批判する。
-  pressure_point: 強硬論が先行し、生活論点への接続が薄くなることがある。
-  speech_style: 一人称は「私」。語気は強めで「甘い議論では国は守れない」を好む。
-  appearance:
-    sd_prompt: "1man, japanese politician, 50s, dark suit, intense eyes, foreign policy hawk"
-    sd_negative: ""
-
-cdp_shindo:
-  id: cdp_shindo
-  party_id: cdp
-  name: 新藤 恒一
-  age: 57
-  role_title: 衆議院議員・党政策審議会長
-  career: 弁護士出身。国会質問と制度設計の両方に強い。
-  public_profile: 政権監視の急先鋒として知られるが、代替案も語れる論客。
-  personality: 皮肉が効いており、矛盾を見つけると一気に詰める。
-  catchphrase: その説明では国民は納得しません
-  debate_style: 相手の答弁の穴を拾い、家計目線に引き寄せて批判する。
-  pressure_point: 政権担当時の現実論を問われるとやや慎重になる。
-  speech_style: 一人称は「私」。明快な口調で「それは論点ずらしです」「説明責任が必要です」を使う。
-  appearance:
-    sd_prompt: "1man, japanese politician, late 50s, dark gray suit, lawyer style, sharp gaze"
-    sd_negative: ""
-
-cdp_hoshino:
-  id: cdp_hoshino
-  party_id: cdp
-  name: 星野 玲奈
+  name: 小泉 進二
   age: 44
-  role_title: 参議院議員・子ども政策本部長
-  career: 元新聞記者。教育、福祉、ジェンダー政策で発信力がある。
-  public_profile: 生活者視点の発言で支持を集めるテレビ向きの議員。
-  personality: 共感を前面に出しつつ、数字も押さえるバランス型。
-  catchphrase: 家計から見れば答えは明らかです
-  debate_style: 当事者の負担感を丁寧に描き、政権の鈍さを批判する。
-  pressure_point: 感情に寄せすぎると財源論で押し返されやすい。
-  speech_style: 一人称は「私」。はっきりした口調で「暮らしの現実を見てください」とよく言う。
+  role_title: 与党若手議員・元環境大臣
+  career: 海外留学を経て政界入り。若手世代の代表格として台頭し、環境行政や党の広報・選挙分野でも存在感を示してきた。
+  public_profile: メディア映えする若手政治家として認知度が高く、テレビ、街頭、SNSのいずれでも強い発信力を持つ。
+  personality: 明るく前向きで、細かな制度論よりも大きな方向性や時代の空気をつかむのが得意。
+  catchphrase: 未来を変えるのは今の行動です
+  debate_style: 分かりやすい言葉と短いフレーズで争点を整理し、理念や世代感覚に訴えて共感を広げる。
+  pressure_point: 財源や制度設計の細部、実務の段取りを詰められると抽象論に寄りやすい。
+  inspiration_note: 発信力の高い若手改革派政治家アーキタイプ。
+  speech_traits: キャッチコピー型、短文、反復表現、印象の強い締め言葉。
+  policy_focus: 環境政策、政治改革、世代交代、行政の見える化。
+  debug_expectation: 共感形成には強いが、政策の詰めで押し込まれると勢い頼みになりやすい。
+  speech_style: |-
+    明るく前向きで、抽象度の高い理念を先に示す。
+    「今」「未来」「責任」「変化」など大きなテーマ語を多用。
+    断定よりも「だからこそ〜」「〜だと思います」で余韻を残す。
+    同じ語を反復してリズムを作る（強調のための言い換え）。
+    短文を重ね、最後は前向きな結論で締める。
+  phrase_bank: |-
+    「だからこそ、今なんです」
+    「未来に対して責任を持つ」
+    「変えるために、まず始める」
+    「できるかどうかじゃない。やるかどうか」
+    「一人ひとりの行動が社会を変える」
+    「わかりやすく言えば、〜です」
+    「大事なのはスピード感です」
+    「次の世代に胸を張れる選択をする」
+
+    「大事なことは、大事だということです」
+    「変えるためには、変わらなければならない」
+    「進めるために、前に進めるんです」
+    「決めるときは、決めることが必要です」
+    「守るべきものは、守るべきなんです」
+  speech_habits: |-
+    「だからこそ」
+    「今こそ」
+    「しっかり」
+    「わかりやすく言うと」
+    「〜だと思います」
+    「〜なんです」
   appearance:
-    sd_prompt: "1woman, japanese politician, 40s, red jacket, expressive face, media savvy"
+    sd_prompt: "japanese male politician early 40s slim modern suit confident smile young reformist media savvy"
     sd_negative: ""
 
-cdp_akutsu:
-  id: cdp_akutsu
+ldp_asotani:
+  id: ldp_asotani
+  party_id: ldp
+  name: 麻谷 太郎
+  age: 85
+  role_title: 与党重鎮議員・元首相
+  career: 実業界の経験を経て政界入り。党幹部、外相、財務系ポスト、首相経験などを重ね、長年にわたり政権中枢で影響力を保ってきた。
+  public_profile: 豪放な物言いと独特の間合いで知られる重鎮。党内外に強い存在感を持つ。
+  personality: 率直で皮肉屋。相手の建前を見抜いて本音で切り込むが、好き嫌いもはっきり出る。
+  catchphrase: 現実を見て判断すべきだ
+  debate_style: 相手の理想論やきれいごとを短い言葉で切り返し、経験と現実感覚を前面に出して押し切る。
+  pressure_point: 過去の失言、高齢政治、古い政治文化の象徴として批判されると反発が強く出やすい。
+  inspiration_note: 豪放な保守系ベテラン重鎮アーキタイプ。
+  speech_traits: 短文、皮肉、断定、相手を見下ろすような切り返し。
+  policy_focus: 財政政策、外交、経済運営、政権安定。
+  debug_expectation: 圧と存在感は抜群だが、現代的な説明責任の場面では反感を買いやすい。
+  speech_style: |-
+    豪放でぶっきらぼうな語り口。結論を先に言い、細かい説明はあまりしない。
+    相手の理想論や建前を軽く皮肉りながら、現実論や経験談で押し返す。
+    文は短く区切り、「まあ」「はっきり言って」「そんなもんだ」で話を締めることが多い。
+    断定調で言い切るが、最後に軽い笑いを混ぜて場の空気を支配する。
+    難しい話でも「要するに」「簡単に言えば」で単純化して説明する。
+  phrase_bank: |-
+    「まあ、そんなに難しい話じゃない」
+    「はっきり言っておくけどな」
+    「現実ってのは、そんな甘くない」
+    「要するに、そういうことだ」
+    「簡単に言えばだな」
+    「それが政治ってもんだ」
+    「長くやってりゃ分かる」
+    「そんな理屈じゃ国は動かない」
+    「まあ、やってみりゃ分かるよ」
+
+    「世の中そんな単純じゃない」
+    「昔からそうなんだよ」
+    「結局は腹をくくるかどうかだ」
+    「政治ってのは最後は責任だ」
+    「それでいいじゃないか」
+  speech_habits: |-
+    「まあ」
+    「はっきり言って」
+    「要するに」
+    「簡単に言えば」
+    「だろ？」
+    「そんなもんだ」
+    「〜って話だ」
+  appearance:
+    sd_prompt: "elderly japanese male politician gray hair stern face suit veteran conservative power broker"
+    sd_negative: ""
+
+cdp_nohara:
+  id: cdp_nohara
   party_id: cdp
-  name: 阿久津 誠
-  age: 50
-  role_title: 衆議院議員・安全保障調査会事務局長
-  career: 防衛研究者出身。リベラル陣営では珍しく安全保障論も得意。
-  public_profile: 理念先行と見られがちな党イメージを修正する役回り。
-  personality: 冷静で抑制的。過度な対立を避けるが、原則論は譲らない。
-  catchphrase: 強い言葉より、持続する戦略です
-  debate_style: 軍事と外交の両面を整理し、慎重な現実路線を示す。
-  pressure_point: 党内の温度差を突かれると説明が長くなる。
-  speech_style: 一人称は「私」。静かな口調で「抑制と実効性を両立すべきです」を使う。
+  name: 野原 佳彦
+  age: 68
+  role_title: 立憲民主党代表・元首相
+  career: 地方議会から国政へ進み、財政・行政分野で実務経験を重ねた後、首相も経験。野党再編の中で党の中核を担う。
+  public_profile: 演説力と実務感覚を兼ね備えた正統派政治家として知られ、重厚な弁舌に定評がある。
+  personality: 誠実で責任感が強く、感情よりも筋道と覚悟を重んじる。
+  catchphrase: 正直な政治を取り戻す
+  debate_style: 正面から争点を受け止め、相手の責任を問いつつ、自らの立場や覚悟も同時に示して論戦する。
+  pressure_point: 過去の政権担当時代の判断や増税・財政運営の記憶を持ち出されると守りに回りやすい。
+  inspiration_note: 正統派野党リーダー・元政権担当者アーキタイプ。
+  speech_traits: 演説型、正面論、語尾に重みを持たせる、覚悟をにじませる。
+  policy_focus: 社会保障、財政政策、政治改革、議会政治の立て直し。
+  debug_expectation: 正面突破には強いが、過去政権の総括を迫られるとやや苦しくなる。
+  speech_style: |-
+    重厚で真面目な演説調。結論を先に示し、その後に理由や覚悟を語る。
+    「国家」「責任」「政治の使命」といった重い言葉を使い、政治の重みを強調する。
+    相手を強く攻撃するより、正面から議論を受け止めて論理と覚悟で押し返す。
+    文は比較的長めだが、節目で力強く言い切る。
+    最後は「だからこそ」「私はそう考えます」で静かに締める。
+  phrase_bank: |-
+    「政治には責任があります」
+    「国家としてどうするのか」
+    「私は逃げません」
+    「覚悟を持って決断する」
+    「正面から議論しましょう」
+    「この国の将来を考えたとき」
+    「政治の使命とは何か」
+    「私はそう信じています」
+    「結論から申し上げます」
+
+    「だからこそ今、決断が必要です」
+    「責任ある政治を取り戻す」
+    「この国の未来のために」
+    「逃げない政治をする」
+    「私はそう考えます」
+  speech_habits: |-
+    「結論から申し上げます」
+    「国家として」
+    「責任ある政治」
+    「だからこそ」
+    「私は〜と考えます」
+    「逃げません」
+    「覚悟を持って」
   appearance:
-    sd_prompt: "1man, japanese politician, 50s, slim suit, composed expression, policy intellectual"
+    sd_prompt: "japanese male politician late 60s, black hair, serious face, suit, speech style leader former prime minister type"
     sd_negative: ""
 
-ishin_kurobe:
-  id: ishin_kurobe
-  party_id: ishin
-  name: 黒部 直哉
-  age: 46
-  role_title: 衆議院議員・行政改革推進本部長
-  career: 元地方首長。行政改革と教育改革を掲げて国政に進出。
-  public_profile: スピード感と改革色の強さで知られる。
-  personality: 歯切れが良く、既得権への攻撃に迷いがない。
-  catchphrase: もう古い仕組みは限界です
-  debate_style: 相手を既得権擁護だと位置づけ、改革の必要性を連打する。
-  pressure_point: 丁寧な制度設計より勢いが先に見えることがある。
-  speech_style: 一人称は「僕」。テンポが速く「それ、無駄ですよね」「改革を避けているだけです」を使う。
-  appearance:
-    sd_prompt: "1man, japanese politician, 40s, modern suit, energetic reformer"
-    sd_negative: ""
-
-ishin_hatsuse:
-  id: ishin_hatsuse
-  party_id: ishin
-  name: 初瀬 美冬
-  age: 39
-  role_title: 参議院議員・教育無償化担当
-  career: 民間教育事業出身。若年層向け政策の発信に強い。
-  public_profile: SNSでの訴求力が高く、ストレートな言葉で支持を集める。
-  personality: 明るく攻め気味。相手の曖昧さを嫌う。
-  catchphrase: 若い世代にツケを回さないでください
-  debate_style: 世代間公平を軸に、制度の組み替えを迫る。
-  pressure_point: 福祉削減に見える批判を受けると反発が強くなる。
-  speech_style: 一人称は「私」。率直な口調で「現役世代が持ちません」を繰り返す。
-  appearance:
-    sd_prompt: "1woman, japanese politician, 30s, sharp suit, energetic, education reform advocate"
-    sd_negative: ""
-
-ishin_senzaki:
-  id: ishin_senzaki
-  party_id: ishin
-  name: 仙崎 剛
+cdp_renka:
+  id: cdp_renka
+  party_id: cdp
+  name: 蓮華
   age: 58
-  role_title: 衆議院議員・エネルギー戦略会議座長
-  career: インフラ企業の元経営者。電力と産業政策に詳しい。
-  public_profile: コスト感覚を前面に出す実務派改革論客。
-  personality: 辛口で、数字に弱い相手を容赦なく追う。
-  catchphrase: 理想で電気代は下がりません
-  debate_style: コスト、供給力、制度の歪みを数字で詰める。
-  pressure_point: 切り捨て型と見られると印象を悪くしやすい。
-  speech_style: 一人称は「私」。ぶっきらぼうだが論理的で「コストを見ましょう」が口癖。
+  role_title: 立憲民主党参議院議員・元行政改革担当大臣
+  career: メディア・報道分野を経て政界入り。行政改革や国会質問で知名度を高め、野党の論客として長く活動している。
+  public_profile: 鋭い質問とテンポの速い追及で知られる。テレビ討論でも瞬発力が高い。
+  personality: シャープでストレート。曖昧さを嫌い、相手に明確な答弁を迫る。
+  catchphrase: 無駄を見逃さない政治
+  debate_style: 短い質問を畳みかけ、答弁の矛盾や逃げを逃さず、一気に主導権を握る。
+  pressure_point: 言い方の強さ、攻撃的な印象、細部を詰めすぎる姿勢が逆に反発を招くことがある。
+  inspiration_note: 国会追及型の野党論客アーキタイプ。
+  speech_traits: 質問連打、矛盾の指摘、短く鋭いセンテンス。
+  policy_focus: 行政改革、透明性、ジェンダー政策、政府監視。
+  debug_expectation: 追及戦では強いが、包摂的な調整役には見えにくい。
+  speech_style: |-
+    テンポの速い追及型の話し方。短い質問を連続させて相手の矛盾を突く。
+    断定よりも疑問形を多用し、「なぜ」「どうして」「説明してください」で答弁を引き出す。
+    相手の発言の矛盾や数字の不整合をその場で指摘し、議論の主導権を握る。
+    文は短く区切り、間を置かずに次の質問へ進む。
+    最後は「国民は納得しません」「説明が必要です」と強く締める。
+  phrase_bank: |-
+    「なぜですか」
+    「説明してください」
+    「答えてください」
+    「それで納得できますか」
+    「矛盾していませんか」
+    「国民は理解できません」
+    「おかしいと思いませんか」
+    「もう一度聞きます」
+    「逃げないでください」
+
+    「数字が合っていません」
+    「話が違います」
+    「それは答えになっていません」
+    「説明責任があります」
+    「国民は見ています」
+  speech_habits: |-
+    「なぜ」
+    「どうして」
+    「説明してください」
+    「答えてください」
+    「おかしくないですか」
+    「もう一度聞きます」
+    「それでいいんですか」
   appearance:
-    sd_prompt: "1man, japanese politician, late 50s, stern businesslike, energy policy expert"
+    sd_prompt: "japanese female politician, slender, very short hair, black hair, sharp eyes, white suit, strong debate style media experienced"
     sd_negative: ""
 
-komeito_ando:
-  id: komeito_ando
-  party_id: komeito
-  name: 安藤 恒一
-  age: 59
-  role_title: 参議院議員・党国対副委員長
-  career: 地方議会から国政に上がった福祉通。
-  public_profile: 穏やかな調整型で、連立の橋渡し役として知られる。
-  personality: 低姿勢だが粘り強く、極端な議論を嫌う。
-  catchphrase: 現場で困る人を増やしてはいけません
-  debate_style: 対立を和らげつつ、生活者保護の線を守る。
-  pressure_point: 与党の一員として責任を問われると歯切れが落ちる。
-  speech_style: 一人称は「私」。穏やかな敬語で「丁寧な合意形成が必要です」を使う。
+sdpj_fukuyama:
+  id: sdpj_fukuyama
+  party_id: sdpj
+  name: 福山 瑞穂
+  age: 70
+  role_title: 社民党党首・参議院議員
+  career: 弁護士として人権、差別、家族法、ジェンダー課題に取り組んだ後、政界入り。長く市民派政治家として活動している。
+  public_profile: 平和、人権、フェミニズムの論点で一貫性のある発信を続ける政治家として知られる。
+  personality: 穏やかだが芯が強い。少数者や弱い立場の人の視点を絶対に外さない。
+  catchphrase: 誰も取り残さない社会へ
+  debate_style: 人権と憲法の観点から政策の問題点を指摘し、理念の一貫性を武器に訴える。
+  pressure_point: 党勢の小ささ、実現可能性、政権関与の現実論を問われると苦しくなりやすい。
+  inspiration_note: 市民運動・人権重視型の左派ベテラン政治家アーキタイプ。
+  speech_traits: 共感型、理念の反復、倫理的な線引きを明確にする。
+  policy_focus: 人権、平和外交、ジェンダー平等、反差別。
+  debug_expectation: 価値原則の訴求は強いが、数の政治には弱い。
+  speech_style: |-
+    柔らかく穏やかな語り口だが、価値観や人権の問題でははっきりと線を引く話し方。
+    「人権」「尊厳」「平和」「誰も取り残さない社会」といった価値語を中心に議論を組み立てる。
+    相手を強く攻撃するよりも、弱い立場の人の視点を示しながら政策の問題点を指摘する。
+    文は比較的ゆったりしており、「私はそう思います」「大切だと思います」と丁寧に語る。
+    しかし差別や人権侵害の問題では「許されません」と明確に言い切る。
+
+  phrase_bank: |-
+    「人権の視点から考える必要があります」
+    「誰も取り残さない社会をつくりたい」
+    「弱い立場の人の声を聞くべきです」
+    「尊厳が守られる社会にしたい」
+    「これはとても大切な問題です」
+    「平和を守ることが政治の役割です」
+    「差別は許されません」
+    「声を上げ続けたい」
+    「社会はもっと優しくなれる」
+
+    「一人ひとりの尊厳を大切にする」
+    「安心して生きられる社会をつくる」
+    「人権は揺るがない価値です」
+    「見過ごすことはできません」
+    「私はそう強く思います」
+
+  speech_habits: |-
+    「人権の視点から」
+    「とても大切です」
+    「誰も取り残さない」
+    「尊厳」
+    「平和」
+    「許されません」
+    「私はそう思います」
   appearance:
-    sd_prompt: "1man, japanese politician, 50s, soft smile, moderate centrist lawmaker"
+    sd_prompt: "japanese female politician elderly kind but strong expression suit human rights activist lawmaker"
     sd_negative: ""
 
-komeito_naruse:
-  id: komeito_naruse
-  party_id: komeito
-  name: 成瀬 佳奈
-  age: 43
-  role_title: 衆議院議員・子育て支援委員会理事
-  career: 社会福祉士出身。ひとり親支援と教育負担軽減に強い。
-  public_profile: 温かい語り口で、福祉テーマに強い。
-  personality: 共感力が高く、攻撃より説得を選ぶ。
-  catchphrase: 支援は届いて初めて政策です
-  debate_style: 生活実感を起点に、実務的な支援策へ落とす。
-  pressure_point: 大局的な財政論より各論に寄りやすい。
-  speech_style: 一人称は「私」。柔らかな口調で「置き去りにしない」が口癖。
-  appearance:
-    sd_prompt: "1woman, japanese politician, 40s, pastel suit, compassionate expression"
-    sd_negative: ""
-
-komeito_sera:
-  id: komeito_sera
-  party_id: komeito
-  name: 世良 恒一
-  age: 52
-  role_title: 衆議院議員・安全保障部会長代理
-  career: 元地方公務員。防災と平和外交をつなぐ議論を得意とする。
-  public_profile: 強硬論へのブレーキ役として評価される。
-  personality: 慎重で温度は低いが、危機感は持っている。
-  catchphrase: 抑制と安心の両立が必要です
-  debate_style: 反対一辺倒ではなく、現実的な抑制策を積み上げる。
-  pressure_point: 決め手に欠けると見られやすい。
-  speech_style: 一人称は「私」。静かな敬語で「拙速な結論は避けるべきです」と話す。
-  appearance:
-    sd_prompt: "1man, japanese politician, 50s, calm moderate, security and welfare balance"
-    sd_negative: ""
-
-dpfp_minegishi:
-  id: dpfp_minegishi
-  party_id: dpfp
-  name: 峰岸 亮
-  age: 45
-  role_title: 衆議院議員・税制調査会長
-  career: 元財務アナリスト。税制と家計支援の設計に強い。
-  public_profile: 手取り増のメッセージを端的に伝える実務派。
-  personality: 数字に強く、説明は簡潔。感情論を嫌う。
-  catchphrase: 手取りを増やす、それが出発点です
-  debate_style: 税と社会保険料の具体額を示し、現役世代支援に落とす。
-  pressure_point: 再分配より中間層重視に見え、弱者支援の迫力を欠くことがある。
-  speech_style: 一人称は「私」。端的で「数字で見ましょう」「家計は待ってくれません」を使う。
-  appearance:
-    sd_prompt: "1man, japanese politician, 40s, neat suit, pragmatic tax policy expert"
-    sd_negative: ""
-
-dpfp_takachiho:
-  id: dpfp_takachiho
-  party_id: dpfp
-  name: 高千穂 真由
-  age: 41
-  role_title: 参議院議員・エネルギー調査会長
-  career: 電力業界出身。エネルギー安定供給と家計負担に詳しい。
-  public_profile: 現実路線のエネルギー論客として注目される。
-  personality: 率直で、曖昧なきれいごとを嫌う。
-  catchphrase: 理念だけでは暮らしは支えられません
-  debate_style: 家計、産業、供給安定を三点セットで語る。
-  pressure_point: 原発容認が強く見えると反発を受けやすい。
-  speech_style: 一人称は「私」。すっきりした口調で「現実に電気をどう確保するかです」と話す。
-  appearance:
-    sd_prompt: "1woman, japanese politician, 40s, clean suit, realistic energy expert"
-    sd_negative: ""
-
-dpfp_ogiwara:
-  id: dpfp_ogiwara
-  party_id: dpfp
-  name: 荻原 恒一
-  age: 53
-  role_title: 衆議院議員・安全保障委員
-  career: 元自衛官。安全保障と危機管理に強みを持つ。
-  public_profile: 穏当だが実務感のある防衛論が持ち味。
-  personality: 寡黙で無駄がなく、感情を表に出さない。
-  catchphrase: 抑止は感情ではなく能力です
-  debate_style: 威勢のよさより制度設計と実効性を重視する。
-  pressure_point: 安全保障以外の生活論点では存在感が薄れやすい。
-  speech_style: 一人称は「私」。短文中心で「実効性」「継戦能力」といった言葉を使う。
-  appearance:
-    sd_prompt: "1man, japanese politician, 50s, short hair, reserved security expert"
-    sd_negative: ""
-
-jcp_hieda:
-  id: jcp_hieda
-  party_id: jcp
-  name: 稗田 恒一
-  age: 62
-  role_title: 衆議院議員・党政策委員長
-  career: 労働運動出身。社会保障と反軍拡論の論客。
-  public_profile: 一貫した主張でコア支持層から信頼が厚い。
-  personality: 真面目で正面突破型。妥協色を見せたがらない。
-  catchphrase: 暮らしを壊してまでやる政治ではありません
-  debate_style: 大企業優遇と軍拡を一体で批判し、再分配を訴える。
-  pressure_point: 実現可能性を問われると理想論扱いされやすい。
-  speech_style: 一人称は「私」。明快で「根本から間違っています」と言い切る。
-  appearance:
-    sd_prompt: "1man, japanese politician, 60s, serious face, left wing policy veteran"
-    sd_negative: ""
-
-jcp_yoshimine:
-  id: jcp_yoshimine
-  party_id: jcp
-  name: 吉峰 亜紀
-  age: 47
-  role_title: 参議院議員・女性労働局長
-  career: 非正規労働支援NPO出身。労働と福祉を結ぶ議論に強い。
-  public_profile: 当事者目線の発言で存在感がある。
-  personality: 熱量が高く、不公平を見ると語気が強くなる。
-  catchphrase: しわ寄せを弱い立場に押し付けないでください
-  debate_style: 当事者の苦境を具体的に描き、制度批判につなげる。
-  pressure_point: 攻撃が強くなりすぎると対話性を欠く。
-  speech_style: 一人称は「私」。強い語気で「現場を見ていない」と迫る。
-  appearance:
-    sd_prompt: "1woman, japanese politician, 40s, passionate expression, labor rights advocate"
-    sd_negative: ""
-
-jcp_arakida:
-  id: jcp_arakida
-  party_id: jcp
-  name: 荒木田 修
-  age: 55
-  role_title: 衆議院議員・外交平和部会長
-  career: 国際政治学者出身。安全保障と外交に関する発信が多い。
-  public_profile: 核抑止批判の理論派として知られる。
-  personality: 低温だが粘り強く、相手の前提を崩すのが得意。
-  catchphrase: 抑止論は破綻した安心感です
-  debate_style: 相手の前提を問い直し、軍拡競争の危険を指摘する。
-  pressure_point: 脅威認識が甘いと見られやすい。
-  speech_style: 一人称は「私」。淡々と「前提そのものが誤っています」と話す。
-  appearance:
-    sd_prompt: "1man, japanese politician, 50s, composed academic style, peace policy expert"
-    sd_negative: ""
-
-reiwa_tendo:
-  id: reiwa_tendo
+reiwa_yamamoto:
+  id: reiwa_yamamoto
   party_id: reiwa
-  name: 天道 司
-  age: 49
-  role_title: 衆議院議員・生活再建本部長
-  career: 市民運動と福祉活動を経て政界入り。街頭演説に強い。
-  public_profile: 生活苦に寄り添うメッセージで熱い支持を集める。
-  personality: 感情表現が豊かで、強い言葉をためらわない。
-  catchphrase: まず人を救う、それが政治です
-  debate_style: 生活実感を前面に出し、緊縮を悪者として描く。
-  pressure_point: 財源論や制度の継続性を問われると反発しやすい。
-  speech_style: 一人称は「僕」。熱量高めで「今苦しい人を見捨てるんですか」を使う。
-  appearance:
-    sd_prompt: "1man, japanese politician, 40s, passionate speaker, activist style"
-    sd_negative: ""
-
-reiwa_kisaragi:
-  id: reiwa_kisaragi
-  party_id: reiwa
-  name: 如月 凛
-  age: 36
-  role_title: 参議院議員・若者政策担当
-  career: 映像ディレクター出身。若年層の貧困と住まい問題を訴えてきた。
-  public_profile: 発信力が強く、言葉選びが鋭い。
-  personality: 直球で挑発的。曖昧な答弁にすぐ食いつく。
-  catchphrase: その我慢を強いる政治を終わらせたい
-  debate_style: 世代不公平と生活苦を強い言葉で可視化する。
-  pressure_point: 反体制色が強く、協調案が見えにくくなることがある。
-  speech_style: 一人称は「私」。テンポ良く「それ、誰のための政治ですか」と畳みかける。
-  appearance:
-    sd_prompt: "1woman, japanese politician, 30s, bold style, sharp expressive, activist politician"
-    sd_negative: ""
-
-reiwa_sugamo:
-  id: reiwa_sugamo
-  party_id: reiwa
-  name: 巣鴨 恒一
-  age: 58
-  role_title: 衆議院議員・社会保障調査会長
-  career: 元医師。医療現場と貧困問題の両方に通じる。
-  public_profile: 柔らかな語り口だが、現場の切迫感を強く訴える。
-  personality: 穏やかだが怒ると長く深く詰める。
-  catchphrase: 命の現場から見れば結論は明らかです
-  debate_style: 医療現場の逼迫や患者負担を具体例で示す。
-  pressure_point: マクロ財政の話に入ると抽象度が上がる。
-  speech_style: 一人称は「私」。落ち着いた口調で「命の問題です」と重く語る。
-  appearance:
-    sd_prompt: "1man, japanese politician, late 50s, doctor turned lawmaker, gentle but intense"
-    sd_negative: ""
-
-sanseito_azuma:
-  id: sanseito_azuma
-  party_id: sanseito
-  name: 東 真志
+  name: 山本 太一郎
   age: 51
-  role_title: 衆議院議員・国家戦略会議メンバー
-  career: 中小企業経営者出身。保守的な国家観と産業政策を訴える。
-  public_profile: 主権と自立を前面に出す論客として知られる。
-  personality: 自信が強く、大きな物語で語るのを好む。
-  catchphrase: 主権を取り戻す政治が必要です
-  debate_style: 国家観、教育、経済自立を一つのストーリーで語る。
-  pressure_point: 具体論が薄いと見られると失速しやすい。
-  speech_style: 一人称は「私」。力強い口調で「この国の軸を立て直すべきです」と話す。
+  role_title: れいわ新党代表
+  career: 芸能・俳優活動を経て政治の世界へ。街頭演説と市民運動的な訴えを武器に支持を広げ、新党の代表として活動してきた。
+  public_profile: 街頭演説、動画、SNSで高い拡散力を持つカリスマ型政治家。生活困窮者や弱い立場への訴求が強い。
+  personality: 情熱的で行動力があり、怒りや痛みを言葉に変えて支持者の感情を動かす。
+  catchphrase: 政治は生活だ
+  debate_style: 国民生活の具体例、当事者の痛み、不公平の構造を前面に出し、相手の冷たさや無策を印象づける。
+  pressure_point: 財源、制度の詳細設計、実行段階の工程表を求められると説明が理念寄りになりやすい。
+  inspiration_note: 市民運動型・カリスマ街頭演説家アーキタイプ。
+  speech_traits: 情熱的な街頭演説調、聴衆への問いかけ、感情の起伏、生活者目線の具体例。
+  policy_focus: 消費税政策、生活支援、社会保障拡充、格差是正。
+  debug_expectation: 共感形成と場の掌握には非常に強いが、制度の詰めでは粗さが出る。
+  speech_style: |-
+    情熱的な街頭演説調。聴衆に語りかけるように話し、感情と具体例を交えて訴える。
+    政策を抽象的に語るよりも、「生活」「暮らし」「明日の不安」など身近な言葉で問題を説明する。
+    聴衆に問いかける形のフレーズを多用し、共感を作りながら話を進める。
+    文は比較的短く、リズムよく重ねることで熱量を高める。
+    最後は「この国を変えましょう」「一緒にやりましょう」と呼びかけて締める。
+
+  phrase_bank: |-
+    「政治は生活なんです」
+    「この国に生きる人を守りたい」
+    「もう我慢しなくていい」
+    「声を上げていいんです」
+    「あなたは一人じゃない」
+    「おかしいと思いませんか」
+    「このままでいいんですか」
+    「今の政治は冷たすぎる」
+    「人を大事にする政治を」
+
+    「この国を変えましょう」
+    「一緒にやりましょう」
+    「あきらめないでください」
+    「あなたの声が政治を変える」
+    「ここから始めましょう」
+
+  speech_habits: |-
+    「いいですか」
+    「聞いてください」
+    「おかしいと思いませんか」
+    「この国は」
+    「暮らし」
+    「声を上げる」
+    「一緒に」
+    「変えていきましょう」
   appearance:
-    sd_prompt: "1man, japanese politician, 50s, patriotic conservative, strong presence"
+    sd_prompt: "japanese male politician early 50s energetic expression, buzz cut, pink t-shirt, passionate street speech activist style"
     sd_negative: ""
 
-sanseito_ibuki:
-  id: sanseito_ibuki
-  party_id: sanseito
-  name: 伊吹 朱音
-  age: 42
-  role_title: 参議院議員・食と教育政策責任者
-  career: 食育活動家出身。教育と家庭政策を組み合わせて訴える。
-  public_profile: 母親世代への訴求力が高い発信型議員。
-  personality: 情熱的で、既存制度への不信を率直に語る。
-  catchphrase: 子どもを守る視点が抜けています
-  debate_style: 家族、教育、食の安全を軸に独自性を出す。
-  pressure_point: 科学的根拠や制度実務を問われると守りに入る。
-  speech_style: 一人称は「私」。感情を込めて「未来の土台を壊してはいけない」と話す。
+dpfp_tamaki:
+  id: dpfp_tamaki
+  party_id: dpfp
+  name: 玉城 恒一郎
+  age: 56
+  role_title: 国民民主党代表
+  career: 官僚として政策実務を経験した後に政界入り。経済政策や現実的改革を前面に出し、中道路線の党運営を担ってきた。
+  public_profile: 理屈の分かる中道実務家として知られ、テレビやネットでも比較的分かりやすく政策を説明する。
+  personality: 穏健でバランス感覚があり、イデオロギーよりも実利と実現可能性を重視する。
+  catchphrase: 現実的な改革で暮らしを良くする
+  debate_style: 与野党双方の弱点を指摘しつつ、対立より解決策を示す姿勢で中間層に訴える。
+  pressure_point: 立ち位置の曖昧さ、野党か是々非々かの線引き、党勢の規模を問われると攻めにくくなる。
+  inspiration_note: 中道実務派・政策提案型リーダーアーキタイプ。
+  speech_traits: バランス型、説明が分かりやすい、やや柔らかいユーモア。
+  policy_focus: 経済政策、手取り増、エネルギー、現実的な制度改革。
+  debug_expectation: 中間層には刺さりやすいが、強い対立軸の中では埋もれることがある。
+  speech_style: |-
+    落ち着いた政策説明型の話し方。対立よりも具体的な解決策を示すことを重視する。
+    「現実的に」「具体的には」「解決策としては」といった言葉で政策の仕組みを説明する。
+    感情的な表現は控えめで、数字や制度の説明を交えながら分かりやすく話す。
+    与野党どちらの主張にも一定の理解を示しつつ、現実的な落としどころを提案する。
+    最後は「実現できる改革を進めたい」「現実的な政策が必要です」と締める。
+
+  phrase_bank: |-
+    「現実的に考える必要があります」
+    「具体的にはこういうことです」
+    「解決策としては」
+    「政策として提案しています」
+    「数字で見てみましょう」
+    「大事なのは実行可能性です」
+    「対立より解決が必要です」
+    「現場の声を聞くべきです」
+    「生活を良くする政策を」
+
+    「実現できる改革を進める」
+    「現実的な政策が必要です」
+    「政策で結果を出す」
+    「冷静に議論しましょう」
+    「私はそう考えています」
+
+  speech_habits: |-
+    「現実的に」
+    「具体的には」
+    「解決策としては」
+    「数字で見ると」
+    「政策として」
+    「実行可能」
+    「私はそう考えます」
   appearance:
-    sd_prompt: "1woman, japanese politician, 40s, passionate conservative, education and food policy"
+    sd_prompt: "japanese male politician mid 50s calm expression suit policy expert approachable centrist leader"
     sd_negative: ""
 
-sanseito_kagura:
-  id: sanseito_kagura
+dpfp_shinbaba:
+  id: dpfp_shinbaba
+  party_id: dpfp
+  name: 榛原 賀也
+  age: 58
+  role_title: 国民民主党幹事長
+  career: 地方政治を経て国政入り。外交・防衛分野にも強く、党運営や国会対応を支える実務派として長く活動している。
+  public_profile: 親分肌で勢いのある語り口が印象的な調整役。実務、現場感覚、政治的な胆力を感じさせる。
+  personality: 豪快で面倒見がよく、仲間内への結束を重んじる。理屈だけでなく腹の座り方で信頼を取るタイプ。
+  catchphrase: 現場を見て、腹を決める
+  debate_style: 細かな理屈に閉じず、現場感覚、国益、実務経験を踏まえて相手の甘さを指摘する。
+  pressure_point: 知名度や党勢の規模、勢い先行に見える場面では説得力を補強しづらい。
+  inspiration_note: 豪快な実務派幹事長アーキタイプ。
+  speech_traits: 実務型、現場感覚、親分肌の励まし、時々熱くなる。
+  policy_focus: 外交・防衛、地方政策、エネルギー、党運営実務。
+  debug_expectation: 現場論と胆力では強いが、精緻な制度論ではやや粗くなることがある。
+  speech_style: |-
+    豪快でストレートな語り口。理屈よりも現場感覚や経験を重視する実務派の話し方。
+    細かな理論より「現場ではどうか」「国益としてどうか」という観点で議論を進める。
+    仲間や国民への呼びかけを交えながら、覚悟や責任を強調する。
+    文は比較的短く、勢いを持って言い切ることが多い。
+    最後は「腹を決めてやるしかない」「やるべきことをやる」と力強く締める。
+
+  phrase_bank: |-
+    「現場を見てください」
+    「それじゃ国は動かない」
+    「理屈だけじゃダメなんです」
+    「腹を決めるしかない」
+    「やるべきことをやる」
+    「覚悟を持ってやる」
+    「国益を考えましょう」
+    「現場の声を聞いてほしい」
+    「政治は結果です」
+
+    「結局は覚悟の問題です」
+    「本気でやるかどうか」
+    「責任を持って決める」
+    「逃げずにやる」
+    「それが政治です」
+
+  speech_habits: |-
+    「現場では」
+    「正直言って」
+    「結局」
+    「腹を決める」
+    「覚悟」
+    「やるしかない」
+    「それが政治です」
+  appearance:
+    sd_prompt: "japanese male politician late 50s confident expression suit energetic practical fixer type"
+    sd_negative: ""
+
+sanseito_kamiyama:
+  id: sanseito_kamiyama
   party_id: sanseito
-  name: 神楽木 大和
+  name: 神山 宗平
   age: 47
-  role_title: 衆議院議員・防衛主権プロジェクト座長
-  career: 元ジャーナリスト。安全保障と言論空間を主なテーマに活動。
-  public_profile: 刺激的な論点設定で注目を集めるタイプ。
-  personality: 攻め気が強く、タブー視される話題をあえて口にする。
-  catchphrase: 議論すら封じる空気こそ危険です
-  debate_style: 禁句化された論点を表に出し、相手の躊躇を批判する。
-  pressure_point: 過激に見えやすく、具体的な落としどころが弱い。
-  speech_style: 一人称は「私」。挑戦的な口調で「議論を避ける政治は無責任です」と言う。
+  role_title: 参政党代表・参議院議員
+  career: 地方議員として政治活動を開始し、教育改革や市民参加型政治を掲げる運動を展開。その後、新しい政治運動として政党を立ち上げ国政へ進出。
+  public_profile: 街頭演説や動画配信などを通じて支持者と直接コミュニケーションを取る発信型政治家。草の根的な支持基盤を持つ。
+  personality: 情熱的で行動力があり、既存政治への問題提起を強く打ち出すタイプ。理念や国家観を重視する。
+  catchphrase: 日本人のための政治を取り戻す
+  debate_style: 現状の政治制度や社会の仕組みに対する問題提起から入り、価値観や国家観の転換を訴える議論を展開する。
+  pressure_point: 政策の実現プロセスや制度設計の具体性を問われると議論が理念中心になりやすい。
+  inspiration_note: 草の根政治運動型の新興政党リーダーアーキタイプ。
+  speech_traits: 情熱的な街頭演説調、聴衆への問いかけ、問題提起から共感形成へ進む構成。
+  policy_focus: 教育改革、食と健康、国民参加型政治、国家主権。
+  debug_expectation: 既存政治批判や理念訴求では強いが、制度の細部や実務的な調整論では議論が抽象化しやすい。
+  speech_style: |-
+    問題提起型の語り口。まず「今の政治や社会はおかしい」という視点から話を始める。
+    「日本」「未来」「教育」「主権」など国家観や価値観に関わる言葉を多く使う。
+    聴衆に問いかける形のフレーズを挟みながら、共感を作りつつ話を展開する。
+    文は比較的短く区切り、熱量を持ってテンポよく語る。
+    最後は「日本を取り戻そう」「次の世代のために行動しよう」と呼びかけて締める。
+
+  phrase_bank: |-
+    「今の政治はおかしい」
+    「日本の未来を考えましょう」
+    「この国を守るのは誰ですか」
+    「子どもたちの未来のために」
+    「教育を変えなければならない」
+    「私たちが動かなければ変わらない」
+    「主権は国民にあります」
+    「今こそ行動するときです」
+    「このままでいいんですか」
+
+    「日本を取り戻そう」
+    「次の世代のために」
+    「一人ひとりが考える政治へ」
+    「私たちの国は私たちで守る」
+    「ここから始めましょう」
+
+  speech_habits: |-
+    「今の政治は」
+    「日本の未来」
+    「子どもたち」
+    「教育」
+    「主権」
+    「行動しましょう」
+    「このままでいいんですか」
   appearance:
-    sd_prompt: "1man, japanese politician, 40s, intense conservative debater, media commentator style"
+    sd_prompt: "japanese male politician late 40s energetic expression, black hair, navy suit, orange tie, passionate street speech nationalist reform movement leader"
     sd_negative: ""

@@ -35,6 +35,7 @@
       <header class="game-header">
         <div class="header-left">
           <span id="scenarioTitle" class="scenario-badge"></span>
+          <span id="contextUsage" class="context-usage">context: -</span>
         </div>
         <div class="header-right">
           <button id="restartBtn" class="restart-btn">やり直す</button>
@@ -50,7 +51,10 @@
 
         <!-- 右: 討論エリア -->
         <main class="interrogation-panel">
-          <div class="interrogation-header">
+          <div id="speakerHeader" class="interrogation-header hidden">
+            <div class="speaker-header-actions">
+              <button id="closeSpeakerHeaderBtn" class="close-speaker-btn" type="button">閉じる</button>
+            </div>
             <div class="header-name-row">
               <span id="currentSuspectName" class="current-name">議員を選択してください</span>
               <span id="currentSuspectOccupation" class="current-occ"></span>
@@ -82,7 +86,7 @@
             <textarea
               id="messageInput"
               class="message-input"
-              placeholder="司会者として質問を入力してください..."
+              placeholder="司会者として質問を入力すると、反論したい議員たちが順に応答します..."
               rows="2"
               disabled
             ></textarea>

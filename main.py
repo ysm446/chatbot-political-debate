@@ -438,7 +438,6 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
         topic_id: str
 
     class InterrogateRequest(BaseModel):
-        speaker_id: str
         message: str
 
     @app.get("/api/game/scenarios")
@@ -458,7 +457,7 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     async def game_get_state() -> Dict[str, Any]:
         session = game_state.get("session")
         if session is None:
-            raise HTTPException(status_code=404, detail="ゲームが開始されていません")
+            raise HTTPException(status_code=404, detail="討論が開始されていません")
         return session.to_state_dict()
 
     @app.post("/api/game/interrogate/stream")
@@ -470,19 +469,34 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
             raise HTTPException(status_code=400, detail="討論はすでに終了しています")
         if llm_container.get("llm") is None:
             raise HTTPException(status_code=503, detail="モデルが読み込まれていません")
-        if not any(s["id"] == payload.speaker_id for s in session.speakers):
-            raise HTTPException(status_code=400, detail="無効な登壇者IDです")
+        if not payload.message.strip():
+            raise HTTPException(status_code=400, detail="質問を入力してください")
 
         sampling_config = config.get("sampling", {})
 
         def generate_events() -> Generator[str, None, None]:
+            context_usage_text = "計算失敗"
+            try:
+                usage = game_engine.estimate_round_context_usage(
+                    session=session,
+                    user_message=payload.message,
+                    llm=llm_container["llm"],
+                    sampling_config=sampling_config,
+                )
+                context_usage_text = _format_context_usage_text(usage)
+                if usage.get("speaker_name"):
+                    context_usage_text += f" | 最重: {usage['speaker_name']}"
+            except Exception as exc:
+                logger.warning("討論コンテキスト使用率の計算に失敗: %s", exc)
+
             for event_payload in game_engine.generate_interrogation_stream(
                 session=session,
-                suspect_id=payload.speaker_id,
                 user_message=payload.message,
                 llm=llm_container["llm"],
                 sampling_config=sampling_config,
             ):
+                if event_payload.get("event") == "round_start":
+                    event_payload["context_usage"] = context_usage_text
                 yield f"data: {json.dumps(event_payload, ensure_ascii=False)}\n\n"
 
         return StreamingResponse(generate_events(), media_type="text/event-stream")

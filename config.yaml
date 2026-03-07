@@ -40,7 +40,7 @@ stable_diffusion:
   # 背景・場所
   # 例: "interrogation room, dark room, concrete wall"
   #     "police station, indoor"
-  prompt_bg: "interrogation room, dark concrete wall,"
+  prompt_bg: "downtown, street, afternoon, sunny"
 
   # ライティング
   # 例: "cinematic lighting, dramatic side lighting, hard light"

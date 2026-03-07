@@ -8,6 +8,9 @@ const scenarioList = document.getElementById('scenarioList');
 const modelList = document.getElementById('modelList');
 const loadingMsg = document.getElementById('loadingMsg');
 const scenarioTitle = document.getElementById('scenarioTitle');
+const contextUsage = document.getElementById('contextUsage');
+const speakerHeader = document.getElementById('speakerHeader');
+const closeSpeakerHeaderBtn = document.getElementById('closeSpeakerHeaderBtn');
 const suspectList = document.getElementById('suspectList');
 const currentSuspectName = document.getElementById('currentSuspectName');
 const currentSuspectOccupation = document.getElementById('currentSuspectOccupation');
@@ -26,8 +29,7 @@ let currentSuspectId = null;
 let isStreaming = false;
 let imageCache = {};
 let activeModelKey = '';
-
-const chatHistories = {};
+let debateHistory = [];
 
 async function init() {
   loadingMsg.textContent = 'サーバーに接続中...';
@@ -180,7 +182,7 @@ function showGameScreen() {
   gameScreen.classList.remove('hidden');
 
   scenarioTitle.textContent = gameState.topic_title;
-
+  contextUsage.textContent = 'context: 待機中';
   suspectList.innerHTML = '';
   for (const s of gameState.speakers) {
     const item = document.createElement('div');
@@ -189,21 +191,23 @@ function showGameScreen() {
     item.innerHTML = `
       <div class="s-name">${escHtml(s.name)}</div>
       <div class="s-occ">${escHtml(s.party_name)} / ${escHtml(s.role_title)}</div>
-      <div class="s-badge">未発言</div>
+      <div class="s-badge">待機中</div>
     `;
     item.addEventListener('click', () => selectSuspect(s.id));
     suspectList.appendChild(item);
   }
 
   currentSuspectId = null;
+  debateHistory = [];
   chatLog.innerHTML = '';
+  imageCache = {};
+  speakerHeader.classList.add('hidden');
   currentSuspectName.textContent = '議員を選択してください';
   currentSuspectOccupation.textContent = '';
   suspectProfile.classList.add('hidden');
-  messageInput.disabled = true;
-  sendBtn.disabled = true;
+  messageInput.disabled = false;
+  sendBtn.disabled = false;
   messageInput.value = '';
-  imageCache = {};
 }
 
 async function loadSuspectImage(suspectId) {
@@ -247,10 +251,10 @@ async function loadSuspectImage(suspectId) {
 }
 
 function selectSuspect(suspectId) {
-  if (isStreaming) return;
-
+  if (!gameState) return;
   currentSuspectId = suspectId;
   const suspect = gameState.speakers.find(s => s.id === suspectId);
+  if (!suspect) return;
 
   document.querySelectorAll('.suspect-item').forEach(el => {
     el.classList.toggle('active', el.dataset.id === suspectId);
@@ -260,54 +264,118 @@ function selectSuspect(suspectId) {
   currentSuspectOccupation.textContent = `${suspect.party_name} / ${suspect.role_title}`;
   profileBackground.textContent = suspect.public_profile;
   profileAlibi.textContent = suspect.party_position;
+  speakerHeader.classList.remove('hidden');
   suspectProfile.classList.remove('hidden');
-
   loadSuspectImage(suspectId);
-  renderChatLog(suspectId);
-
-  messageInput.disabled = false;
-  sendBtn.disabled = false;
-  messageInput.focus();
 }
 
-function renderChatLog(suspectId) {
-  chatLog.innerHTML = '';
-  const history = chatHistories[suspectId] || [];
-  for (const msg of history) {
-    appendMessage(msg.role, msg.content, false);
-  }
-  scrollToBottom();
+function closeSpeakerHeader() {
+  currentSuspectId = null;
+  speakerHeader.classList.add('hidden');
+  suspectProfile.classList.add('hidden');
+  currentSuspectName.textContent = '議員を選択してください';
+  currentSuspectOccupation.textContent = '';
+  document.querySelectorAll('.suspect-item').forEach(el => {
+    el.classList.remove('active');
+  });
 }
 
-function appendMessage(role, content, streaming = false) {
-  const isUser = role === 'user';
-  const suspect = currentSuspectId ? gameState.speakers.find(s => s.id === currentSuspectId) : null;
+async function hydrateMessageAvatar(avatarEl, speakerId) {
+  if (!speakerId) return;
+  await loadSuspectImage(speakerId);
+  const cached = imageCache[speakerId];
+  if (!cached || cached === 'error') return;
 
+  avatarEl.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = cached;
+  img.alt = '';
+  img.className = 'msg-avatar-image';
+  avatarEl.appendChild(img);
+}
+
+function appendMessage(role, label, content, streaming = false, speakerId = null) {
   const msgEl = document.createElement('div');
-  msgEl.className = `msg ${isUser ? 'user' : 'suspect'}`;
+  msgEl.className = `msg ${role === 'user' ? 'user' : 'suspect'}`;
 
-  const label = isUser ? '司会者（あなた）' : (suspect ? suspect.name : '議員');
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'user' ? '司' : '議';
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+
   const bubble = document.createElement('div');
   bubble.className = `msg-bubble${streaming ? ' streaming' : ''}`;
   bubble.textContent = content;
 
   const labelEl = document.createElement('div');
-  labelEl.className = 'msg-label';
-  labelEl.textContent = label;
+  if (role === 'user') {
+    labelEl.className = 'msg-label';
+    labelEl.textContent = label;
+  } else {
+    const match = label.match(/^(.*)\s\((.*)\)$/);
+    const name = match ? match[1] : label;
+    const party = match ? match[2] : '';
 
-  msgEl.appendChild(labelEl);
-  msgEl.appendChild(bubble);
+    labelEl.className = 'msg-label msg-speaker-name';
+    labelEl.textContent = name;
+
+    if (party) {
+      const partyEl = document.createElement('div');
+      partyEl.className = 'msg-party';
+      partyEl.textContent = party;
+      meta.appendChild(labelEl);
+      meta.appendChild(partyEl);
+    } else {
+      meta.appendChild(labelEl);
+    }
+  }
+
+  if (role === 'user') {
+    body.appendChild(avatar);
+    body.appendChild(bubble);
+    msgEl.appendChild(labelEl);
+  } else {
+    meta.appendChild(bubble);
+    body.appendChild(avatar);
+    body.appendChild(meta);
+  }
+  msgEl.appendChild(body);
   chatLog.appendChild(msgEl);
   scrollToBottom();
+  if (role !== 'user' && speakerId) {
+    hydrateMessageAvatar(avatar, speakerId);
+  }
   return bubble;
+}
+
+function appendSystemNote(text) {
+  const note = document.createElement('div');
+  note.className = 'msg';
+  note.innerHTML = `<div class="msg-label">進行</div><div class="msg-bubble">${escHtml(text)}</div>`;
+  chatLog.appendChild(note);
+  scrollToBottom();
 }
 
 function scrollToBottom() {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+function updateSpeakerBadge(speakerId, text) {
+  const item = document.querySelector(`.suspect-item[data-id="${speakerId}"]`);
+  if (item) item.querySelector('.s-badge').textContent = text;
+}
+
+function getSpeaker(speakerId) {
+  return gameState?.speakers.find(s => s.id === speakerId) || null;
+}
+
 async function sendMessage() {
-  if (!currentSuspectId || isStreaming) return;
+  if (isStreaming) return;
   const text = messageInput.value.trim();
   if (!text) return;
 
@@ -316,24 +384,21 @@ async function sendMessage() {
   sendBtn.disabled = true;
   isStreaming = true;
 
-  if (!chatHistories[currentSuspectId]) chatHistories[currentSuspectId] = [];
-  chatHistories[currentSuspectId].push({ role: 'user', content: text });
-  appendMessage('user', text, false);
+  debateHistory.push({ role: 'user', label: '司会者（あなた）', content: text });
+  appendMessage('user', '司会者（あなた）', text, false);
 
-  const bubble = appendMessage('suspect', '', true);
-  let answerText = '';
+  const bubbles = {};
 
   try {
     const res = await fetch(`${API_BASE}/api/game/interrogate/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ speaker_id: currentSuspectId, message: text }),
+      body: JSON.stringify({ message: text }),
     });
 
     if (!res.ok) {
       const err = await res.json();
-      bubble.textContent = `[エラー: ${err.detail || '不明なエラー'}]`;
-      bubble.classList.remove('streaming');
+      appendSystemNote(`[エラー] ${err.detail || '不明なエラー'}`);
     } else {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -353,50 +418,69 @@ async function sendMessage() {
           let event;
           try { event = JSON.parse(json); } catch (_) { continue; }
 
-          if (event.event === 'answer') {
-            answerText += event.text;
-            bubble.textContent = answerText;
-            scrollToBottom();
-          } else if (event.event === 'done') {
-            bubble.classList.remove('streaming');
-            chatHistories[currentSuspectId].push({ role: 'assistant', content: answerText });
-            updateSuspectBadge(currentSuspectId);
+          if (event.event === 'round_start') {
+            scenarioTitle.textContent = gameState.topic_title;
+            contextUsage.textContent = `context: ${event.context_usage || '計算失敗'}`;
+            document.querySelectorAll('.suspect-item .s-badge').forEach(el => {
+              el.textContent = '静観';
+            });
+            for (const candidate of event.order) {
+              updateSpeakerBadge(candidate.speaker_id, '発言候補');
+            }
+          } else if (event.event === 'speaker_start') {
+            const label = `${event.speaker_name} (${event.party_name})`;
+            bubbles[event.speaker_id] = appendMessage('assistant', label, '', true, event.speaker_id);
+            updateSpeakerBadge(event.speaker_id, '発言中');
+          } else if (event.event === 'answer') {
+            const bubble = bubbles[event.speaker_id];
+            if (bubble) {
+              bubble.textContent += event.text;
+              scrollToBottom();
+            }
+          } else if (event.event === 'speaker_done') {
+            const bubble = bubbles[event.speaker_id];
+            const speaker = getSpeaker(event.speaker_id);
+            if (bubble && speaker) {
+              bubble.classList.remove('streaming');
+              debateHistory.push({
+                role: 'assistant',
+                label: `${speaker.name} (${speaker.party_name})`,
+                content: bubble.textContent,
+              });
+            }
+            updateSpeakerBadge(event.speaker_id, '発言済み');
           } else if (event.event === 'error') {
-            bubble.textContent = `[エラー: ${event.text}]`;
-            bubble.classList.remove('streaming');
+            const bubble = bubbles[event.speaker_id];
+            if (bubble) {
+              bubble.textContent = `[エラー: ${event.text}]`;
+              bubble.classList.remove('streaming');
+            } else {
+              appendSystemNote(`[エラー] ${event.text}`);
+            }
           }
         }
       }
     }
   } catch (err) {
-    bubble.textContent = '[接続エラーが発生しました]';
-    bubble.classList.remove('streaming');
+    appendSystemNote('[接続エラーが発生しました]');
     console.error(err);
   } finally {
     isStreaming = false;
-    if (currentSuspectId) {
-      messageInput.disabled = false;
-      sendBtn.disabled = false;
-      messageInput.focus();
-    }
-  }
-}
-
-function updateSuspectBadge(suspectId) {
-  const item = document.querySelector(`.suspect-item[data-id="${suspectId}"]`);
-  if (item) {
-    item.classList.add('has-chat');
-    item.querySelector('.s-badge').textContent = '発言済み';
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
   }
 }
 
 function restart() {
   gameScreen.classList.add('hidden');
   scenarioScreen.classList.remove('hidden');
-  Object.keys(chatHistories).forEach(k => delete chatHistories[k]);
   gameState = null;
   currentSuspectId = null;
   isStreaming = false;
+  debateHistory = [];
+  contextUsage.textContent = 'context: -';
+  speakerHeader.classList.add('hidden');
 }
 
 function escHtml(str) {
@@ -417,5 +501,6 @@ messageInput.addEventListener('keydown', (e) => {
 });
 
 restartBtn.addEventListener('click', restart);
+closeSpeakerHeaderBtn.addEventListener('click', closeSpeakerHeader);
 
 init();
