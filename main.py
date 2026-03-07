@@ -405,7 +405,6 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
 
     # ===== ゲーム用エンドポイント =====
     from src import game_engine
-    from src.scenarios import SCENARIOS
     from src.sd_handler import SDHandler
 
     game_state: Dict[str, Any] = {"session": None}
@@ -436,31 +435,20 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     app.mount("/generated_images", StaticFiles(directory="generated_images"), name="generated_images")
 
     class GameStartRequest(BaseModel):
-        scenario_id: str
+        topic_id: str
 
     class InterrogateRequest(BaseModel):
-        suspect_id: str
+        speaker_id: str
         message: str
-
-    class AccuseRequest(BaseModel):
-        suspect_id: str
 
     @app.get("/api/game/scenarios")
     async def game_scenarios() -> Dict[str, Any]:
-        scenarios = [
-            {
-                "id": sid,
-                "title": s["title"],
-                "description": s["description"],
-            }
-            for sid, s in SCENARIOS.items()
-        ]
-        return {"scenarios": scenarios}
+        return {"scenarios": game_engine.list_topics()}
 
     @app.post("/api/game/start")
     async def game_start(payload: GameStartRequest) -> Dict[str, Any]:
         try:
-            session = game_engine.start_game(payload.scenario_id)
+            session = game_engine.start_game(payload.topic_id)
             game_state["session"] = session
             return {"ok": True, "state": session.to_state_dict()}
         except ValueError as exc:
@@ -477,20 +465,20 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     async def game_interrogate_stream(payload: InterrogateRequest):
         session = game_state.get("session")
         if session is None:
-            raise HTTPException(status_code=404, detail="ゲームが開始されていません")
+            raise HTTPException(status_code=404, detail="討論が開始されていません")
         if session.is_finished:
-            raise HTTPException(status_code=400, detail="ゲームはすでに終了しています")
+            raise HTTPException(status_code=400, detail="討論はすでに終了しています")
         if llm_container.get("llm") is None:
             raise HTTPException(status_code=503, detail="モデルが読み込まれていません")
-        if not any(s["id"] == payload.suspect_id for s in session.suspects):
-            raise HTTPException(status_code=400, detail="無効な容疑者IDです")
+        if not any(s["id"] == payload.speaker_id for s in session.speakers):
+            raise HTTPException(status_code=400, detail="無効な登壇者IDです")
 
         sampling_config = config.get("sampling", {})
 
         def generate_events() -> Generator[str, None, None]:
             for event_payload in game_engine.generate_interrogation_stream(
                 session=session,
-                suspect_id=payload.suspect_id,
+                suspect_id=payload.speaker_id,
                 user_message=payload.message,
                 llm=llm_container["llm"],
                 sampling_config=sampling_config,
@@ -499,23 +487,23 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
 
         return StreamingResponse(generate_events(), media_type="text/event-stream")
 
-    @app.get("/api/game/character_image/{suspect_id}")
-    async def game_character_image(suspect_id: str):
+    @app.get("/api/game/character_image/{speaker_id}")
+    async def game_character_image(speaker_id: str):
         session = game_state.get("session")
         if session is None:
-            raise HTTPException(status_code=404, detail="ゲームが開始されていません")
+            raise HTTPException(status_code=404, detail="討論が開始されていません")
 
-        suspect = next((s for s in session.suspects if s["id"] == suspect_id), None)
-        if suspect is None:
-            raise HTTPException(status_code=404, detail="容疑者が見つかりません")
+        speaker = next((s for s in session.speakers if s["id"] == speaker_id), None)
+        if speaker is None:
+            raise HTTPException(status_code=404, detail="登壇者が見つかりません")
 
         if sd_handler is None:
             raise HTTPException(status_code=503, detail="Stable Diffusionが無効です")
 
-        appearance = suspect.get("appearance", {})
+        appearance = speaker.get("appearance", {})
         sd_prompt = appearance.get("sd_prompt", "1person, portrait, photorealistic")
         sd_negative = appearance.get("sd_negative", "nsfw, worst quality, low quality")
-        cache_key = f"{session.scenario_id}_{suspect_id}"
+        cache_key = f"{session.topic_id}_{speaker_id}"
 
         image_path = await asyncio.get_event_loop().run_in_executor(
             None, sd_handler.get_or_generate, cache_key, sd_prompt, sd_negative
@@ -525,20 +513,6 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
             raise HTTPException(status_code=503, detail="画像生成に失敗しました。AUTOMATIC1111が起動しているか確認してください")
 
         return FileResponse(str(image_path), media_type="image/png")
-
-    @app.post("/api/game/accuse")
-    async def game_accuse(payload: AccuseRequest) -> Dict[str, Any]:
-        session = game_state.get("session")
-        if session is None:
-            raise HTTPException(status_code=404, detail="ゲームが開始されていません")
-        if session.is_finished:
-            raise HTTPException(status_code=400, detail="ゲームはすでに終了しています")
-        if not any(s["id"] == payload.suspect_id for s in session.suspects):
-            raise HTTPException(status_code=400, detail="無効な容疑者IDです")
-
-        result = game_engine.accuse(session, payload.suspect_id)
-        return result
-
     return app
 
 

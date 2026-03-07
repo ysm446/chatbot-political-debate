@@ -1,160 +1,243 @@
 """
-尋問ゲーム エンジン
+政治討論シミュレーターのセッション管理。
 
-ゲームセッション管理・キャラクタープロンプト生成・会話履歴管理
+司会者であるプレイヤーが各党の議員に問いかけ、
+各議員は党の特色と個人の性格を踏まえて討論する。
 """
-import random
 import logging
-from typing import Dict, List, Any, Optional, Generator
+import random
+from typing import Any, Dict, Generator, List, Optional
+
+from src.debate_data import DEBATE_TOPICS, PARTIES, POLITICIANS
 
 logger = logging.getLogger(__name__)
 
-from src.scenarios import SCENARIOS
 
-
-class GameSession:
-    def __init__(self, scenario_id: str, boss_suspect_id: str, suspects: List[Dict[str, Any]]):
-        self.scenario_id = scenario_id
-        self.boss_suspect_id = boss_suspect_id
-        self.suspects = suspects  # ロール情報が解決済みの容疑者リスト
+class DebateSession:
+    def __init__(self, topic_id: str, speakers: List[Dict[str, Any]]):
+        self.topic_id = topic_id
+        self.speakers = speakers
         self.conversations: Dict[str, List[Dict[str, str]]] = {
-            s["id"]: [] for s in suspects
+            speaker["id"]: [] for speaker in speakers
         }
+        self.memories: Dict[str, List[str]] = {speaker["id"]: [] for speaker in speakers}
+        self.timeline: List[Dict[str, str]] = []
         self.is_finished = False
-        self.player_won: Optional[bool] = None
-        self.accused_id: Optional[str] = None
 
     def to_state_dict(self) -> Dict[str, Any]:
-        scenario = SCENARIOS[self.scenario_id]
+        topic = DEBATE_TOPICS[self.topic_id]
         return {
-            "scenario_id": self.scenario_id,
-            "scenario_title": scenario["title"],
-            "scenario_description": scenario["description"],
-            "suspects": [
+            "topic_id": self.topic_id,
+            "topic_title": topic["title"],
+            "topic_summary": topic["summary"],
+            "topic_points": topic.get("key_points", []),
+            "speaker_count": len(self.speakers),
+            "speakers": [
                 {
-                    "id": s["id"],
-                    "name": s["name"],
-                    "age": s["age"],
-                    "occupation": s["occupation"],
-                    "background": s["background"],
-                    "alibi": s["alibi"],
+                    "id": speaker["id"],
+                    "name": speaker["name"],
+                    "age": speaker["age"],
+                    "role_title": speaker["role_title"],
+                    "party_id": speaker["party_id"],
+                    "party_name": speaker["party_name"],
+                    "party_position": speaker["party_position"],
+                    "career": speaker["career"],
+                    "personality": speaker["personality"],
+                    "catchphrase": speaker["catchphrase"],
+                    "public_profile": speaker["public_profile"],
                 }
-                for s in self.suspects
+                for speaker in self.speakers
             ],
-            "is_finished": self.is_finished,
-            "player_won": self.player_won,
-            "accused_id": self.accused_id,
         }
 
 
-def start_game(scenario_id: str) -> GameSession:
-    """シナリオを選択してゲームセッションを開始する。ボスはランダムに決定。"""
-    if scenario_id not in SCENARIOS:
-        raise ValueError(f"Unknown scenario: {scenario_id}")
-
-    scenario = SCENARIOS[scenario_id]
-    suspects_template = scenario["suspects"]
-
-    boss_idx = random.randint(0, len(suspects_template) - 1)
-    boss_suspect_id = suspects_template[boss_idx]["id"]
-
-    resolved_suspects = []
-    for i, template in enumerate(suspects_template):
-        role = "boss" if i == boss_idx else "member"
-        role_knowledge = template["role_knowledge"][role]
-        suspect = {
-            **template,
-            "role": role,
-            "role_desc": role_knowledge["role_desc"],
-            "secrets": role_knowledge["secrets"],
-            "knowledge": role_knowledge["knowledge"],
-        }
-        resolved_suspects.append(suspect)
-
-    logger.info("Game started: scenario=%s, boss=%s", scenario_id, boss_suspect_id)
-    return GameSession(scenario_id, boss_suspect_id, resolved_suspects)
+def list_topics() -> List[Dict[str, Any]]:
+    rows = []
+    for topic_id, topic in DEBATE_TOPICS.items():
+        rows.append(
+            {
+                "id": topic_id,
+                "title": topic["title"],
+                "description": topic["summary"],
+            }
+        )
+    return rows
 
 
-def build_system_prompt(session: GameSession, suspect_id: str) -> str:
-    """指定した容疑者のシステムプロンプトを生成する。"""
-    scenario = SCENARIOS[session.scenario_id]
-    suspect = next(s for s in session.suspects if s["id"] == suspect_id)
-    speech_style = suspect.get("speech_style", suspect["personality"])
+def _pick_speakers() -> List[Dict[str, Any]]:
+    speakers: List[Dict[str, Any]] = []
+    for party_id, party in PARTIES.items():
+        candidates = [
+            politician
+            for politician in POLITICIANS.values()
+            if politician.get("party_id") == party_id
+        ]
+        if not candidates:
+            logger.warning("No politicians found for party=%s", party_id)
+            continue
 
-    return f"""あなたは「{suspect['name']}」（{suspect['age']}歳、{suspect['occupation']}）として振る舞ってください。
+        base = random.choice(candidates)
+        speakers.append(
+            {
+                **base,
+                "party_name": party["name"],
+                "party_position": party["stance_summary"],
+                "party_values": party.get("core_values", []),
+                "policy_stances": party.get("policy_stances", {}),
+                "coalition_style": party.get("coalition_style", ""),
+                "debate_strategy": party.get("debate_strategy", ""),
+            }
+        )
 
-【事件の概要】
-{scenario['description']}
-事件発生日時: {scenario['incident_date']}
+    return speakers
 
-【あなたの基本情報】
-- 名前: {suspect['name']}
-- 年齢: {suspect['age']}歳
-- 職業: {suspect['occupation']}
-- 経歴: {suspect['background']}
-- アリバイ: {suspect['alibi']}
 
-【あなたの立場（絶対に明かさないこと）】
-{suspect['role_desc']}
+def start_game(topic_id: str) -> DebateSession:
+    if topic_id not in DEBATE_TOPICS:
+        raise ValueError(f"Unknown topic: {topic_id}")
 
-【あなたが隠していること】
-{suspect['secrets']}
+    speakers = _pick_speakers()
+    if not speakers:
+        raise ValueError("No speakers available")
 
-【あなたが知っていること・知らないこと】
-{suspect['knowledge']}
+    session = DebateSession(topic_id=topic_id, speakers=speakers)
+    logger.info("Debate started: topic=%s, speakers=%s", topic_id, [s["id"] for s in speakers])
+    return session
 
-【話し方・性格】
-{suspect['personality']}
+
+def get_conversation(session: DebateSession, speaker_id: str) -> List[Dict[str, str]]:
+    return session.conversations.get(speaker_id, [])
+
+
+def _timeline_text(session: DebateSession, current_speaker_id: str, limit: int = 10) -> str:
+    items = session.timeline[-limit:]
+    if not items:
+        return "まだ討論は始まったばかりです。"
+
+    lines = []
+    for item in items:
+        speaker_label = item["speaker_name"]
+        if item["speaker_id"] == "moderator":
+            speaker_label = "司会者"
+        elif item["speaker_id"] == current_speaker_id:
+            speaker_label = f"{speaker_label}（あなた）"
+        lines.append(f"- {speaker_label}: {item['content']}")
+    return "\n".join(lines)
+
+
+def _memory_text(session: DebateSession, speaker_id: str, limit: int = 8) -> str:
+    memories = session.memories.get(speaker_id, [])
+    if not memories:
+        return "まだ個別のやり取りは少なく、明確な個人メモはありません。"
+    return "\n".join(f"- {memory}" for memory in memories[-limit:])
+
+
+def build_system_prompt(session: DebateSession, speaker_id: str) -> str:
+    topic = DEBATE_TOPICS[session.topic_id]
+    speaker = next(s for s in session.speakers if s["id"] == speaker_id)
+    speech_style = speaker.get("speech_style", speaker["personality"])
+
+    topic_points = "\n".join(f"- {point}" for point in topic.get("key_points", []))
+    party_values = "\n".join(f"- {value}" for value in speaker.get("party_values", []))
+    policy_lines = "\n".join(
+        f"- {policy}: {stance}"
+        for policy, stance in speaker.get("policy_stances", {}).items()
+    )
+
+    return f"""あなたは日本の政治討論番組に出演している国会議員「{speaker['name']}」として振る舞ってください。
+
+【番組設定】
+- プレイヤーは司会者です。
+- あなたは {speaker['party_name']} 所属の {speaker['role_title']} です。
+- 司会者の質問や他党議員の発言を踏まえて、自分の立場を明確に述べてください。
+
+【今回の討論テーマ】
+- タイトル: {topic['title']}
+- 概要: {topic['summary']}
+- 注目論点:
+{topic_points}
+
+【所属政党の特色】
+- 党名: {speaker['party_name']}
+- 立ち位置: {speaker['party_position']}
+- 重視する価値観:
+{party_values}
+- 主要政策スタンス:
+{policy_lines}
+- 他党との向き合い方: {speaker.get('coalition_style', '')}
+- 討論での基本戦略: {speaker.get('debate_strategy', '')}
+
+【あなた個人の設定】
+- 名前: {speaker['name']}
+- 年齢: {speaker['age']}歳
+- 役職: {speaker['role_title']}
+- 経歴: {speaker['career']}
+- 公のプロフィール: {speaker['public_profile']}
+- 性格: {speaker['personality']}
+- 決め台詞・口癖: {speaker['catchphrase']}
+- 議論スタイル: {speaker['debate_style']}
+- 弱み: {speaker['pressure_point']}
+
+【あなたの記憶】
+{_memory_text(session, speaker_id)}
+
+【直近の討論の流れ】
+{_timeline_text(session, speaker_id)}
 
 【話し方の指示】
 {speech_style}
 
 【重要なルール】
-1. あなたは尋問を受けている容疑者です。刑事（プレイヤー）からの質問に答えてください。
-2. 日本語で、キャラクターとして自然に答えること。
-3. 毎回の返答で上記の話し方を維持し、語尾・言い回し・テンポに反映すること。
-4. 絶対にゲームのキャラクターであることを明かさないこと。
-5. 絶対にボスが誰かを自分から明かさないこと。
-6. 嘘をついたり、話をはぐらかしたり、一部の真実だけを話すことは許可されています。
-7. 答えは3〜5文程度で、リアルな尋問の会話として自然に振る舞うこと。
-8. 話し方の説明をメタに語らず、その口調でそのまま返答すること。
+1. あなたは実在政治家本人ではなく、政党の特色と議員キャラクターを組み合わせた架空の議員です。
+2. 日本語で、テレビ討論らしく簡潔かつ主張のある返答をしてください。
+3. 司会者の問いに答えつつ、必要なら他党の発言への反論や補足も行ってください。
+4. これまでの討論履歴を踏まえ、前の発言と矛盾しないようにしてください。
+5. 自党に都合の悪い論点でも完全に逃げず、反論・条件付き賛成・論点ずらしのいずれかで応答してください。
+6. 毎回3〜6文で返答し、抽象論だけで終わらず、政策の方向性を入れてください。
+7. 話し方の説明をメタに語らず、その口調でそのまま返答してください。
+8. 勝敗判定やゲームの内部仕様には触れないでください。
 /no_think"""
 
 
-def add_message(session: GameSession, suspect_id: str, role: str, content: str) -> None:
-    """会話履歴にメッセージを追加する。"""
-    session.conversations[suspect_id].append({"role": role, "content": content})
+def add_message(
+    session: DebateSession,
+    speaker_id: str,
+    role: str,
+    content: str,
+    speaker_name: Optional[str] = None,
+) -> None:
+    session.conversations[speaker_id].append({"role": role, "content": content})
 
-
-def get_conversation(session: GameSession, suspect_id: str) -> List[Dict[str, str]]:
-    return session.conversations.get(suspect_id, [])
-
-
-def accuse(session: GameSession, suspect_id: str) -> Dict[str, Any]:
-    """プレイヤーが容疑者を指名する。勝敗を判定して返す。"""
-    session.is_finished = True
-    session.accused_id = suspect_id
-    session.player_won = suspect_id == session.boss_suspect_id
-
-    boss = next(s for s in session.suspects if s["id"] == session.boss_suspect_id)
-    accused = next(s for s in session.suspects if s["id"] == suspect_id)
-    return {
-        "player_won": session.player_won,
-        "boss_id": session.boss_suspect_id,
-        "boss_name": boss["name"],
-        "accused_id": suspect_id,
-        "accused_name": accused["name"],
-    }
+    if role == "user":
+        session.timeline.append(
+            {
+                "speaker_id": "moderator",
+                "speaker_name": "司会者",
+                "content": content,
+            }
+        )
+        session.memories[speaker_id].append(f"司会者から『{content}』と問われた。")
+    elif role == "assistant":
+        resolved_name = speaker_name or next(
+            s["name"] for s in session.speakers if s["id"] == speaker_id
+        )
+        session.timeline.append(
+            {
+                "speaker_id": speaker_id,
+                "speaker_name": resolved_name,
+                "content": content,
+            }
+        )
+        session.memories[speaker_id].append(f"自分は『{content}』と応答した。")
 
 
 def generate_interrogation_stream(
-    session: GameSession,
+    session: DebateSession,
     suspect_id: str,
     user_message: str,
     llm,
     sampling_config: Optional[Dict] = None,
 ) -> Generator[Dict[str, Any], None, None]:
-    """尋問の返答をSSEストリームで生成する。"""
     cfg = sampling_config or {}
     system_prompt = build_system_prompt(session, suspect_id)
     history = get_conversation(session, suspect_id)
@@ -177,16 +260,15 @@ def generate_interrogation_stream(
             stream=True,
         )
 
-        # <think>...</think> をストリーミング中にスキップする状態機械
-        _MAX_TAG = len("</think>")
+        max_tag = len("</think>")
         buffer = ""
-        state = "preamble"  # preamble → skip_thinking → answer
-        first_answer = True  # 最初の回答チャンクか
+        state = "preamble"
+        first_answer = True
 
         def emit_answer(text: str):
             nonlocal answer_text, first_answer
             if first_answer:
-                text = text.lstrip()  # 先頭の空白・改行を除去
+                text = text.lstrip()
                 first_answer = False
                 if not text:
                     return
@@ -216,22 +298,21 @@ def generate_interrogation_stream(
                     if buffer:
                         yield from emit_answer(buffer)
                         buffer = ""
-                else:
-                    if len(buffer) > _MAX_TAG:
-                        buffer = buffer[-_MAX_TAG:]
+                elif len(buffer) > max_tag:
+                    buffer = buffer[-max_tag:]
 
-            else:  # answer
+            else:
                 yield from emit_answer(buffer)
                 buffer = ""
 
-        # 残りバッファをフラッシュ
         if buffer.strip() and state == "answer":
             yield from emit_answer(buffer)
 
     except Exception as exc:
-        logger.error("LLM生成エラー: %s", exc)
+        logger.error("LLM generation error: %s", exc)
         yield {"event": "error", "text": str(exc)}
         return
 
-    add_message(session, suspect_id, "assistant", answer_text)
+    speaker_name = next(s["name"] for s in session.speakers if s["id"] == suspect_id)
+    add_message(session, suspect_id, "assistant", answer_text, speaker_name=speaker_name)
     yield {"event": "done", "text": ""}

@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI 尋問ゲーム</title>
+    <title>AI 政治討論シミュレーター</title>
     <link rel="stylesheet" href="./game.css" />
   </head>
   <body>
     <!-- シナリオ選択画面 -->
     <div id="scenarioScreen" class="screen">
       <div class="scenario-container">
-        <h1 class="game-title">AI 尋問ゲーム</h1>
-        <p class="game-subtitle">犯罪グループの4人を尋問し、ボスを探し出せ。</p>
+        <h1 class="game-title">AI 政治討論シミュレーター</h1>
+        <p class="game-subtitle">司会者として各党の議員に問いかけ、論点を深めてください。</p>
 
         <div class="tab-bar">
           <button class="tab-btn active" data-tab="scenarios">シナリオ</button>
@@ -30,30 +30,29 @@
       </div>
     </div>
 
-    <!-- 尋問メイン画面 -->
+    <!-- 討論メイン画面 -->
     <div id="gameScreen" class="screen hidden">
       <header class="game-header">
         <div class="header-left">
           <span id="scenarioTitle" class="scenario-badge"></span>
         </div>
         <div class="header-right">
-          <button id="accuseBtn" class="accuse-btn">ボスを指名する</button>
           <button id="restartBtn" class="restart-btn">やり直す</button>
         </div>
       </header>
 
       <div class="game-layout">
-        <!-- 左: 容疑者リスト -->
+        <!-- 左: 登壇者リスト -->
         <aside class="suspect-panel">
-          <h2>容疑者</h2>
+          <h2>登壇議員</h2>
           <div id="suspectList" class="suspect-list"></div>
         </aside>
 
-        <!-- 右: 尋問室 -->
+        <!-- 右: 討論エリア -->
         <main class="interrogation-panel">
           <div class="interrogation-header">
             <div class="header-name-row">
-              <span id="currentSuspectName" class="current-name">容疑者を選択してください</span>
+              <span id="currentSuspectName" class="current-name">議員を選択してください</span>
               <span id="currentSuspectOccupation" class="current-occ"></span>
             </div>
             <div id="suspectProfile" class="suspect-profile hidden">
@@ -67,11 +66,11 @@
                 </div>
                 <div class="profile-details">
                   <div class="profile-row">
-                    <span class="profile-label">経歴</span>
+                    <span class="profile-label">プロフィール</span>
                     <span id="profileBackground" class="profile-value"></span>
                   </div>
                   <div class="profile-row">
-                    <span class="profile-label">アリバイ</span>
+                    <span class="profile-label">党の立場</span>
                     <span id="profileAlibi" class="profile-value alibi-text"></span>
                   </div>
                 </div>
@@ -83,33 +82,13 @@
             <textarea
               id="messageInput"
               class="message-input"
-              placeholder="質問を入力してください..."
+              placeholder="司会者として質問を入力してください..."
               rows="2"
               disabled
             ></textarea>
             <button id="sendBtn" class="send-btn" disabled>送信</button>
           </div>
         </main>
-      </div>
-    </div>
-
-    <!-- 指名モーダル -->
-    <div id="accuseModal" class="modal hidden">
-      <div class="modal-box">
-        <h2>ボスを指名する</h2>
-        <p>誰がボスだと思いますか？</p>
-        <div id="accuseList" class="accuse-list"></div>
-        <button id="cancelAccuseBtn" class="cancel-btn">キャンセル</button>
-      </div>
-    </div>
-
-    <!-- 結果モーダル -->
-    <div id="resultModal" class="modal hidden">
-      <div class="modal-box result-box">
-        <div id="resultIcon" class="result-icon"></div>
-        <h2 id="resultTitle"></h2>
-        <p id="resultMessage"></p>
-        <button id="playAgainBtn" class="play-again-btn">もう一度プレイ</button>
       </div>
     </div>
 
