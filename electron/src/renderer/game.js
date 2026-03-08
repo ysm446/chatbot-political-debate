@@ -388,6 +388,7 @@ async function sendMessage() {
   appendMessage('user', '司会者（あなた）', text, false);
 
   const bubbles = {};
+  const pendingSpeakers = {};
 
   try {
     const res = await fetch(`${API_BASE}/api/game/interrogate/stream`, {
@@ -428,11 +429,18 @@ async function sendMessage() {
               updateSpeakerBadge(candidate.speaker_id, '発言候補');
             }
           } else if (event.event === 'speaker_start') {
-            const label = `${event.speaker_name} (${event.party_name})`;
-            bubbles[event.speaker_id] = appendMessage('assistant', label, '', true, event.speaker_id);
+            pendingSpeakers[event.speaker_id] = {
+              label: `${event.speaker_name} (${event.party_name})`,
+            };
             updateSpeakerBadge(event.speaker_id, '発言中');
           } else if (event.event === 'answer') {
-            const bubble = bubbles[event.speaker_id];
+            let bubble = bubbles[event.speaker_id];
+            if (!bubble) {
+              const pending = pendingSpeakers[event.speaker_id];
+              if (!pending) continue;
+              bubble = appendMessage('assistant', pending.label, '', true, event.speaker_id);
+              bubbles[event.speaker_id] = bubble;
+            }
             if (bubble) {
               bubble.textContent += event.text;
               scrollToBottom();
@@ -447,8 +455,11 @@ async function sendMessage() {
                 label: `${speaker.name} (${speaker.party_name})`,
                 content: bubble.textContent,
               });
+              updateSpeakerBadge(event.speaker_id, '発言済み');
+            } else {
+              updateSpeakerBadge(event.speaker_id, '静観');
             }
-            updateSpeakerBadge(event.speaker_id, '発言済み');
+            delete pendingSpeakers[event.speaker_id];
           } else if (event.event === 'error') {
             const bubble = bubbles[event.speaker_id];
             if (bubble) {

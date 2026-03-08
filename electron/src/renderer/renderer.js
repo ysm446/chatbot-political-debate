@@ -176,7 +176,14 @@ async function streamJsonPost(url, payload, onData) {
   });
 
   if (!response.ok || !response.body) {
-    throw new Error(`Stream request failed: ${response.status}`);
+    let detail = `Stream request failed: ${response.status}`;
+    try {
+      const errorPayload = await response.json();
+      if (errorPayload?.detail) {
+        detail = errorPayload.detail;
+      }
+    } catch (_) {}
+    throw new Error(detail);
   }
 
   const reader = response.body.getReader();

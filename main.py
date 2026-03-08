@@ -59,14 +59,37 @@ class SettingsRequest(BaseModel):
 def load_components(config: dict):
     """LLMHandlerを初期化"""
     from src.llm_handler import LLMHandler
+    from src.utils import check_model_exists
 
     model_config = config.get("model", {})
     model_path = model_config.get("path", "./models/Qwen3-30B-A3B-Q4_K_M.gguf")
+
+    if not check_model_exists(model_path):
+        logger.warning("起動時モデルが見つからないため未ロードで開始します: %s", model_path)
+        return None
 
     logger.info("LLMを初期化中: %s", model_path)
     llm = LLMHandler(model_path=model_path, config=model_config)
 
     return llm
+
+
+def _resolve_startup_model(config: dict) -> tuple[dict, str, str]:
+    from src import model_manager
+    from src.utils import check_model_exists, load_settings
+
+    resolved_config = dict(config)
+    resolved_model_config = dict(config.get("model", {}))
+    resolved_config["model"] = resolved_model_config
+
+    saved_model_key = load_settings().get("active_model_key", "")
+    if saved_model_key and model_manager.is_downloaded(saved_model_key):
+        model_path = model_manager.get_model_path(saved_model_key)
+        resolved_model_config["path"] = model_path
+        return resolved_config, model_path, saved_model_key
+
+    model_path = resolved_model_config.get("path", "./models/Qwen3-30B-A3B-Q4_K_M.gguf")
+    return resolved_config, model_path, _detect_active_model(model_path) if check_model_exists(model_path) else ""
 
 
 def _normalize_history(history: List[Any]) -> List[dict]:
@@ -233,10 +256,15 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
         allow_headers=["*"],
     )
 
-    app_state = {
-        "active_model_key": load_settings().get("active_model_key")
-        or _detect_active_model(config.get("model", {}).get("path", "")),
-    }
+    initial_active_model_key = ""
+    if llm_container.get("llm") is not None:
+        initial_active_model_key = (
+            llm_container.get("active_model_key")
+            or load_settings().get("active_model_key")
+            or _detect_active_model(config.get("model", {}).get("path", ""))
+        )
+
+    app_state = {"active_model_key": initial_active_model_key}
 
     @app.get("/health")
     async def health() -> Dict[str, Any]:
@@ -279,6 +307,12 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
 
     @app.post("/api/chat/stream")
     async def chat_stream(payload: ChatRequest):
+        if llm_container.get("llm") is None:
+            raise HTTPException(
+                status_code=503,
+                detail="モデルが読み込まれていません。モデル管理ページからダウンロードまたは切り替えを行ってください",
+            )
+
         sampling_config = {
             **config.get("sampling", {}),
             "temperature": payload.temperature,
@@ -531,7 +565,7 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
-    from src.utils import check_model_exists, load_config, setup_logging
+    from src.utils import load_config, setup_logging
 
     try:
         config = load_config("config.yaml")
@@ -541,21 +575,18 @@ def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
 
     setup_logging(level="INFO", log_file="logs/research_bot.log")
 
-    model_path = config.get("model", {}).get("path", "./models/Qwen3-30B-A3B-Q4_K_M.gguf")
-    if not check_model_exists(model_path):
-        logger.error("モデルが見つかりません: %s", model_path)
-        logger.error("先に download_model.py を実行してください: python download_model.py")
-        sys.exit(1)
+    resolved_config, startup_model_path, active_model_key = _resolve_startup_model(config)
 
     logger.info("Research-Bot API を起動しています...")
+    llm = None
     try:
-        llm = load_components(config)
+        llm = load_components(resolved_config)
     except Exception as exc:
-        logger.exception("初期化エラー: %s", exc)
-        sys.exit(1)
+        logger.exception("起動時モデルの初期化に失敗したため、未ロード状態で続行します: %s", exc)
+        logger.warning("起動時モデル候補: %s", startup_model_path)
 
-    llm_container = {"llm": llm}
-    app = create_app(config, llm_container)
+    llm_container = {"llm": llm, "active_model_key": active_model_key}
+    app = create_app(resolved_config, llm_container)
 
     import uvicorn
 

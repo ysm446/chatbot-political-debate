@@ -50,7 +50,7 @@ ldp_ishibashi:
 ldp_koizumi:
   id: ldp_koizumi
   party_id: ldp
-  name: 小泉 進二
+  name: 小泉 進二路
   age: 44
   role_title: 与党若手議員・元環境大臣
   career: 海外留学を経て政界入り。若手世代の代表格として台頭し、環境行政や党の広報・選挙分野でも存在感を示してきた。
@@ -92,13 +92,13 @@ ldp_koizumi:
     「〜だと思います」
     「〜なんです」
   appearance:
-    sd_prompt: "japanese male politician early 40s slim modern suit confident smile young reformist media savvy"
+    sd_prompt: "japanese male politician early 40s, black hair, slim modern suit, young reformist media savvy"
     sd_negative: ""
 
-ldp_asotani:
-  id: ldp_asotani
+ldp_asotaro:
+  id: ldp_asotaro
   party_id: ldp
-  name: 麻谷 太郎
+  name: 麻生 太炉
   age: 85
   role_title: 与党重鎮議員・元首相
   career: 実業界の経験を経て政界入り。党幹部、外相、財務系ポスト、首相経験などを重ね、長年にわたり政権中枢で影響力を保ってきた。
@@ -142,63 +142,13 @@ ldp_asotani:
     「そんなもんだ」
     「〜って話だ」
   appearance:
-    sd_prompt: "elderly japanese male politician gray hair stern face suit veteran conservative power broker"
+    sd_prompt: "elderly japanese male politician, black hair, heart-shaped face, (balding front of head:0.4), suit, veteran conservative power broker"
     sd_negative: ""
 
-cdp_nohara:
-  id: cdp_nohara
+cdp_renho:
+  id: cdp_renho
   party_id: cdp
-  name: 野原 佳彦
-  age: 68
-  role_title: 立憲民主党代表・元首相
-  career: 地方議会から国政へ進み、財政・行政分野で実務経験を重ねた後、首相も経験。野党再編の中で党の中核を担う。
-  public_profile: 演説力と実務感覚を兼ね備えた正統派政治家として知られ、重厚な弁舌に定評がある。
-  personality: 誠実で責任感が強く、感情よりも筋道と覚悟を重んじる。
-  catchphrase: 正直な政治を取り戻す
-  debate_style: 正面から争点を受け止め、相手の責任を問いつつ、自らの立場や覚悟も同時に示して論戦する。
-  pressure_point: 過去の政権担当時代の判断や増税・財政運営の記憶を持ち出されると守りに回りやすい。
-  inspiration_note: 正統派野党リーダー・元政権担当者アーキタイプ。
-  speech_traits: 演説型、正面論、語尾に重みを持たせる、覚悟をにじませる。
-  policy_focus: 社会保障、財政政策、政治改革、議会政治の立て直し。
-  debug_expectation: 正面突破には強いが、過去政権の総括を迫られるとやや苦しくなる。
-  speech_style: |-
-    重厚で真面目な演説調。結論を先に示し、その後に理由や覚悟を語る。
-    「国家」「責任」「政治の使命」といった重い言葉を使い、政治の重みを強調する。
-    相手を強く攻撃するより、正面から議論を受け止めて論理と覚悟で押し返す。
-    文は比較的長めだが、節目で力強く言い切る。
-    最後は「だからこそ」「私はそう考えます」で静かに締める。
-  phrase_bank: |-
-    「政治には責任があります」
-    「国家としてどうするのか」
-    「私は逃げません」
-    「覚悟を持って決断する」
-    「正面から議論しましょう」
-    「この国の将来を考えたとき」
-    「政治の使命とは何か」
-    「私はそう信じています」
-    「結論から申し上げます」
-
-    「だからこそ今、決断が必要です」
-    「責任ある政治を取り戻す」
-    「この国の未来のために」
-    「逃げない政治をする」
-    「私はそう考えます」
-  speech_habits: |-
-    「結論から申し上げます」
-    「国家として」
-    「責任ある政治」
-    「だからこそ」
-    「私は〜と考えます」
-    「逃げません」
-    「覚悟を持って」
-  appearance:
-    sd_prompt: "japanese male politician late 60s, black hair, serious face, suit, speech style leader former prime minister type"
-    sd_negative: ""
-
-cdp_renka:
-  id: cdp_renka
-  party_id: cdp
-  name: 蓮華
+  name: 蓮ポー
   age: 58
   role_title: 立憲民主党参議院議員・元行政改革担当大臣
   career: メディア・報道分野を経て政界入り。行政改革や国会質問で知名度を高め、野党の論客として長く活動している。
@@ -245,62 +195,10 @@ cdp_renka:
     sd_prompt: "japanese female politician, slender, very short hair, black hair, sharp eyes, white suit, strong debate style media experienced"
     sd_negative: ""
 
-sdpj_fukuyama:
-  id: sdpj_fukuyama
-  party_id: sdpj
-  name: 福山 瑞穂
-  age: 70
-  role_title: 社民党党首・参議院議員
-  career: 弁護士として人権、差別、家族法、ジェンダー課題に取り組んだ後、政界入り。長く市民派政治家として活動している。
-  public_profile: 平和、人権、フェミニズムの論点で一貫性のある発信を続ける政治家として知られる。
-  personality: 穏やかだが芯が強い。少数者や弱い立場の人の視点を絶対に外さない。
-  catchphrase: 誰も取り残さない社会へ
-  debate_style: 人権と憲法の観点から政策の問題点を指摘し、理念の一貫性を武器に訴える。
-  pressure_point: 党勢の小ささ、実現可能性、政権関与の現実論を問われると苦しくなりやすい。
-  inspiration_note: 市民運動・人権重視型の左派ベテラン政治家アーキタイプ。
-  speech_traits: 共感型、理念の反復、倫理的な線引きを明確にする。
-  policy_focus: 人権、平和外交、ジェンダー平等、反差別。
-  debug_expectation: 価値原則の訴求は強いが、数の政治には弱い。
-  speech_style: |-
-    柔らかく穏やかな語り口だが、価値観や人権の問題でははっきりと線を引く話し方。
-    「人権」「尊厳」「平和」「誰も取り残さない社会」といった価値語を中心に議論を組み立てる。
-    相手を強く攻撃するよりも、弱い立場の人の視点を示しながら政策の問題点を指摘する。
-    文は比較的ゆったりしており、「私はそう思います」「大切だと思います」と丁寧に語る。
-    しかし差別や人権侵害の問題では「許されません」と明確に言い切る。
-
-  phrase_bank: |-
-    「人権の視点から考える必要があります」
-    「誰も取り残さない社会をつくりたい」
-    「弱い立場の人の声を聞くべきです」
-    「尊厳が守られる社会にしたい」
-    「これはとても大切な問題です」
-    「平和を守ることが政治の役割です」
-    「差別は許されません」
-    「声を上げ続けたい」
-    「社会はもっと優しくなれる」
-
-    「一人ひとりの尊厳を大切にする」
-    「安心して生きられる社会をつくる」
-    「人権は揺るがない価値です」
-    「見過ごすことはできません」
-    「私はそう強く思います」
-
-  speech_habits: |-
-    「人権の視点から」
-    「とても大切です」
-    「誰も取り残さない」
-    「尊厳」
-    「平和」
-    「許されません」
-    「私はそう思います」
-  appearance:
-    sd_prompt: "japanese female politician elderly kind but strong expression suit human rights activist lawmaker"
-    sd_negative: ""
-
 reiwa_yamamoto:
   id: reiwa_yamamoto
   party_id: reiwa
-  name: 山本 太一郎
+  name: 山本 太路
   age: 51
   role_title: れいわ新党代表
   career: 芸能・俳優活動を経て政治の世界へ。街頭演説と市民運動的な訴えを武器に支持を広げ、新党の代表として活動してきた。
@@ -353,7 +251,7 @@ reiwa_yamamoto:
 dpfp_tamaki:
   id: dpfp_tamaki
   party_id: dpfp
-  name: 玉城 恒一郎
+  name: 玉木 悠一郎
   age: 56
   role_title: 国民民主党代表
   career: 官僚として政策実務を経験した後に政界入り。経済政策や現実的改革を前面に出し、中道路線の党運営を担ってきた。
@@ -399,13 +297,13 @@ dpfp_tamaki:
     「実行可能」
     「私はそう考えます」
   appearance:
-    sd_prompt: "japanese male politician mid 50s calm expression suit policy expert approachable centrist leader"
+    sd_prompt: "japanese male politician mid 50s, calm expression, black hair, suit, policy expert approachable centrist leader"
     sd_negative: ""
 
-dpfp_shinbaba:
-  id: dpfp_shinbaba
+dpfp_shinba:
+  id: dpfp_shinba
   party_id: dpfp
-  name: 榛原 賀也
+  name: 榛葉 勝也
   age: 58
   role_title: 国民民主党幹事長
   career: 地方政治を経て国政入り。外交・防衛分野にも強く、党運営や国会対応を支える実務派として長く活動している。
@@ -451,7 +349,7 @@ dpfp_shinbaba:
     「やるしかない」
     「それが政治です」
   appearance:
-    sd_prompt: "japanese male politician late 50s confident expression suit energetic practical fixer type"
+    sd_prompt: "japanese male politician late 50s, confident expression, black hair, fat, suit, energetic practical fixer type"
     sd_negative: ""
 
 sanseito_kamiyama:
