@@ -23,19 +23,19 @@ if exist "D:\miniconda3\Scripts\activate.bat" (
 
 if "%CONDA_BAT%"=="" (
     echo [WARNING] conda activate script not found. Trying PATH...
-    call conda activate new
+    call conda activate main
 ) else (
-    call "%CONDA_BAT%" new
+    call "%CONDA_BAT%" main
 )
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] Failed to activate conda env "new"
+    echo [ERROR] Failed to activate conda env "main"
     pause
     exit /b 1
 )
 
-echo [OK] conda env "new" activated
+echo [OK] conda env "main" activated
 
 cd electron
 if not exist node_modules (

@@ -1,7 +1,7 @@
 ldp_ishibashi:
   id: ldp_ishibashi
   party_id: ldp
-  name: 石橋 茂
+  name: 石破 シゲ
   age: 69
   role_title: 与党ベテラン議員・元防衛大臣
   career: 金融機関勤務を経て政界入り。防衛行政や党幹部職を歴任し、安全保障・地方政策・統治機構論に強い政策通として長く活動してきた。
@@ -50,7 +50,7 @@ ldp_ishibashi:
 ldp_koizumi:
   id: ldp_koizumi
   party_id: ldp
-  name: 小泉 進二路
+  name: 小泉 シンジロ
   age: 44
   role_title: 与党若手議員・元環境大臣
   career: 海外留学を経て政界入り。若手世代の代表格として台頭し、環境行政や党の広報・選挙分野でも存在感を示してきた。
@@ -98,7 +98,7 @@ ldp_koizumi:
 ldp_asotaro:
   id: ldp_asotaro
   party_id: ldp
-  name: 麻生 太炉
+  name: 麻生 タロ
   age: 85
   role_title: 与党重鎮議員・元首相
   career: 実業界の経験を経て政界入り。党幹部、外相、財務系ポスト、首相経験などを重ね、長年にわたり政権中枢で影響力を保ってきた。
@@ -198,7 +198,7 @@ cdp_renho:
 reiwa_yamamoto:
   id: reiwa_yamamoto
   party_id: reiwa
-  name: 山本 太路
+  name: 山本 タロ
   age: 51
   role_title: れいわ新党代表
   career: 芸能・俳優活動を経て政治の世界へ。街頭演説と市民運動的な訴えを武器に支持を広げ、新党の代表として活動してきた。
@@ -245,13 +245,13 @@ reiwa_yamamoto:
     「一緒に」
     「変えていきましょう」
   appearance:
-    sd_prompt: "japanese male politician early 50s energetic expression, buzz cut, pink t-shirt, passionate street speech activist style"
+    sd_prompt: "japanese male politician early 50s energetic expression, black hair, buzz cut, pink t-shirt, passionate street speech activist style"
     sd_negative: ""
 
 dpfp_tamaki:
   id: dpfp_tamaki
   party_id: dpfp
-  name: 玉木 悠一郎
+  name: 玉木 ユイチロウ
   age: 56
   role_title: 国民民主党代表
   career: 官僚として政策実務を経験した後に政界入り。経済政策や現実的改革を前面に出し、中道路線の党運営を担ってきた。
@@ -303,7 +303,7 @@ dpfp_tamaki:
 dpfp_shinba:
   id: dpfp_shinba
   party_id: dpfp
-  name: 榛葉 勝也
+  name: 榛葉 カヅヤ
   age: 58
   role_title: 国民民主党幹事長
   career: 地方政治を経て国政入り。外交・防衛分野にも強く、党運営や国会対応を支える実務派として長く活動している。
@@ -352,10 +352,10 @@ dpfp_shinba:
     sd_prompt: "japanese male politician late 50s, confident expression, black hair, fat, suit, energetic practical fixer type"
     sd_negative: ""
 
-sanseito_kamiyama:
-  id: sanseito_kamiyama
+sanseito_kamiya:
+  id: sanseito_kamiya
   party_id: sanseito
-  name: 神山 宗平
+  name: 神谷 ソウヘイ
   age: 47
   role_title: 参政党代表・参議院議員
   career: 地方議員として政治活動を開始し、教育改革や市民参加型政治を掲げる運動を展開。その後、新しい政治運動として政党を立ち上げ国政へ進出。
@@ -401,5 +401,5 @@ sanseito_kamiyama:
     「行動しましょう」
     「このままでいいんですか」
   appearance:
-    sd_prompt: "japanese male politician late 40s energetic expression, black hair, navy suit, orange tie, passionate street speech nationalist reform movement leader"
+    sd_prompt: "japanese male politician late 40s energetic expression, black hair, crew cut, navy suit, orange tie, passionate street speech nationalist reform movement leader"
     sd_negative: ""
