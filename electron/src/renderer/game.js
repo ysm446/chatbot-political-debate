@@ -433,6 +433,16 @@ async function sendMessage() {
               label: `${event.speaker_name} (${event.party_name})`,
             };
             updateSpeakerBadge(event.speaker_id, '発言中');
+          } else if (event.event === 'thinking_status') {
+            if (!bubbles[event.speaker_id]) {
+              const pending = pendingSpeakers[event.speaker_id];
+              if (pending) {
+                const bubble = appendMessage('assistant', pending.label, '💭 思考中...', true, event.speaker_id);
+                bubble.dataset.thinking = '1';
+                bubbles[event.speaker_id] = bubble;
+                scrollToBottom();
+              }
+            }
           } else if (event.event === 'answer') {
             let bubble = bubbles[event.speaker_id];
             if (!bubble) {
@@ -442,6 +452,10 @@ async function sendMessage() {
               bubbles[event.speaker_id] = bubble;
             }
             if (bubble) {
+              if (bubble.dataset.thinking) {
+                bubble.textContent = '';
+                delete bubble.dataset.thinking;
+              }
               bubble.textContent += event.text;
               scrollToBottom();
             }

@@ -270,6 +270,24 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     async def health() -> Dict[str, Any]:
         return {"status": "ok"}
 
+    @app.post("/api/shutdown")
+    async def shutdown() -> Dict[str, Any]:
+        """llama-server を停止してからプロセスを終了する（Electron 終了時に呼ばれる）"""
+        import os
+
+        async def _do_shutdown():
+            await asyncio.sleep(0.2)  # レスポンスを返してから実行
+            if llm_container.get("llm") is not None:
+                try:
+                    llm_container["llm"].shutdown()
+                except Exception:
+                    pass
+                llm_container["llm"] = None
+            os._exit(0)
+
+        asyncio.create_task(_do_shutdown())
+        return {"ok": True}
+
     @app.get("/api/bootstrap")
     async def bootstrap() -> Dict[str, Any]:
         settings = load_settings()

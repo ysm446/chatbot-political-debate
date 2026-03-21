@@ -570,6 +570,13 @@ def _stream_single_speaker_reply(
     # 2番目以降の登壇者は shared_history が assistant で終わるため、明示的に発言を促す。
     if messages[-1]["role"] != "user":
         messages.append({"role": "user", "content": "（あなたの番です。発言してください）"})
+    # Qwen3/3.5 の思考モードを確実に無効化するため /no_think をユーザーメッセージに付加する。
+    # （system プロンプト末尾の /no_think だけでは Qwen3.5 で効かない場合がある）
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i]["role"] == "user":
+            if "/no_think" not in messages[i]["content"]:
+                messages[i] = {**messages[i], "content": messages[i]["content"] + "\n/no_think"}
+            break
 
     answer_text = ""
     try:
@@ -606,6 +613,7 @@ def _stream_single_speaker_reply(
                 if "<think>" in buffer:
                     buffer = buffer.split("<think>", 1)[1]
                     state = "skip_thinking"
+                    yield {"event": "thinking_status", "speaker_id": speaker_id}
                 elif len(buffer) > 64:
                     state = "answer"
                     yield from emit_answer(buffer)

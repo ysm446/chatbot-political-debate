@@ -93,8 +93,28 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('before-quit', () => {
-  if (backendProcess && !backendProcess.killed) {
-    backendProcess.kill();
-  }
+let isQuitting = false;
+
+app.on('before-quit', (event) => {
+  if (isQuitting) return;
+  event.preventDefault();
+  isQuitting = true;
+
+  const forceKill = () => {
+    if (backendProcess && !backendProcess.killed) {
+      backendProcess.kill();
+    }
+    app.exit(0);
+  };
+
+  // llama-server を先に停止してから Python プロセスを終了する
+  fetch(`${API_URL}/api/shutdown`, { method: 'POST', signal: AbortSignal.timeout(8000) })
+    .then(() => {
+      // Python 側が os._exit(0) で自ら終了するので少し待つ
+      setTimeout(forceKill, 1000);
+    })
+    .catch(() => {
+      // HTTP 呼び出し失敗時は強制終了
+      forceKill();
+    });
 });
