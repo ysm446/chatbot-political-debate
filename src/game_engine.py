@@ -566,18 +566,20 @@ def _stream_single_speaker_reply(
     system_prompt = build_system_prompt(session, speaker_id)
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(session.shared_history)
+    # llama-server (OpenAI 互換 API) は最後のメッセージが "user" でないと 400 を返す。
+    # 2番目以降の登壇者は shared_history が assistant で終わるため、明示的に発言を促す。
+    if messages[-1]["role"] != "user":
+        messages.append({"role": "user", "content": "（あなたの番です。発言してください）"})
 
     answer_text = ""
     try:
-        stream = llm.llm.create_chat_completion(
-            messages=messages,
-            temperature=float(cfg.get("temperature", 0.7)),
-            top_p=float(cfg.get("top_p", 0.95)),
-            top_k=int(cfg.get("top_k", 20)),
-            max_tokens=int(cfg.get("max_tokens", 512)),
-            repeat_penalty=1.05,
-            stream=True,
-        )
+        stream_cfg = {
+            "temperature": float(cfg.get("temperature", 0.7)),
+            "top_p": float(cfg.get("top_p", 0.95)),
+            "top_k": int(cfg.get("top_k", 20)),
+            "max_tokens": int(cfg.get("max_tokens", 512)),
+            "repeat_penalty": 1.05,
+        }
 
         max_tag = len("</think>")
         buffer = ""
@@ -594,8 +596,8 @@ def _stream_single_speaker_reply(
             answer_text += text
             yield {"event": "answer", "speaker_id": speaker_id, "text": text}
 
-        for chunk in stream:
-            delta = chunk["choices"][0]["delta"].get("content", "")
+        for chunk in llm.create_chat_completion_stream(messages, stream_cfg):
+            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
             if not delta:
                 continue
             buffer += delta

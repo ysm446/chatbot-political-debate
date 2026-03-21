@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/GitHub/llama-b8466-bin-win-cuda-13.1-x64/**)"
+    ]
+  }
+}

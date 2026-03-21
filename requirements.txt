@@ -1,6 +1,3 @@
-# LLM推論（Windows + CUDA 対応）
-llama-cpp-python>=0.3.0
-
 # API backend
 fastapi>=0.115.0
 uvicorn>=0.30.0

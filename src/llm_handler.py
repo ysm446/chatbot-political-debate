@@ -1,82 +1,145 @@
 """
-llama-cpp-python LLMハンドラー
-Qwen3 GGUF モデルの読み込みと推論を担当（Windows + CUDA 対応）
+llama-cpp server LLMハンドラー
+llama-server.exe をサブプロセスで起動し、OpenAI 互換 API 経由で推論する。
 """
-import re
+import json
 import logging
-from typing import Generator, Tuple, Optional, Dict, Any
+import os
+import re
+import subprocess
+import time
+from pathlib import Path
+from typing import Dict, Generator, Optional, Tuple, Any
+
+import requests
 
 logger = logging.getLogger(__name__)
 
 # <think>...</think> タグのパターン
 THINKING_PATTERN = re.compile(r"<think>(.*?)</think>", re.DOTALL)
-# ストリーミング中のタグ検出用（最大タグ長）
 _MAX_TAG_LEN = len("</think>")
+
+_DEFAULT_SERVER_PORT = 8766
 
 
 class LLMHandler:
-    """llama-cpp-python を使ったLLM推論を管理するクラス"""
+    """llama-server.exe をサブプロセスで管理し、HTTP 経由で推論を行うクラス"""
 
     def __init__(self, model_path: str, config: Optional[Dict] = None):
         """
         Args:
-            model_path: GGUFモデルファイルのパス（例: ./models/Qwen3-4B-Q4_K_M.gguf）
+            model_path: GGUF モデルファイルのパス
             config: モデル設定
-                - n_gpu_layers: int (-1 = 全レイヤーをGPUにオフロード)
+                - server_bin: llama-server.exe のパス
+                - server_port: llama-server が使用するポート (デフォルト 8766)
+                - server_host: llama-server のホスト (デフォルト 127.0.0.1)
+                - n_gpu_layers: int (-1 = 全レイヤーを GPU にオフロード)
                 - n_ctx: int (コンテキスト長、デフォルト 32768)
-                - n_threads: int (CPUスレッド数、デフォルト 4)
+                - n_threads: int (CPU スレッド数、デフォルト 4)
         """
         self.model_path = model_path
         self.config = config or {}
-        self.llm = None
-        self._load_model()
+        self._server_bin = self.config.get("server_bin", "llama-server")
+        self._server_port = int(self.config.get("server_port", _DEFAULT_SERVER_PORT))
+        self._server_host = self.config.get("server_host", "127.0.0.1")
+        self._base_url = f"http://{self._server_host}:{self._server_port}"
+        self._process: Optional[subprocess.Popen] = None
+        self._log_fd = None
+        self._start_server()
 
-    def _load_model(self):
-        """llama-cpp-python でモデルを読み込む"""
-        try:
-            from llama_cpp import Llama
-        except ImportError as e:
-            logger.error(f"必要なパッケージがインストールされていません: {e}")
-            raise
+    # ------------------------------------------------------------------
+    # サーバー起動・停止
+    # ------------------------------------------------------------------
 
-        logger.info(f"llama-cpp-python でモデルを読み込んでいます: {self.model_path}")
-        logger.info("（初回起動は数分かかる場合があります）")
-
+    def _start_server(self) -> None:
+        """llama-server.exe を起動する"""
         n_gpu_layers = int(self.config.get("n_gpu_layers", -1))
         n_ctx = int(self.config.get("n_ctx", 32768))
         n_threads = int(self.config.get("n_threads", 4))
 
-        logger.info(f"設定: n_gpu_layers={n_gpu_layers}, n_ctx={n_ctx}, n_threads={n_threads}")
+        model_path = str(Path(self.model_path).resolve())
 
-        # 設定通りに GPU オフロードを試みる（エラー時のみ CPU にフォールバック）
-        try:
-            self.llm = Llama(
-                model_path=self.model_path,
-                n_gpu_layers=n_gpu_layers,
-                n_ctx=n_ctx,
-                n_threads=n_threads,
-                verbose=True,
-            )
-            if n_gpu_layers != 0:
-                logger.info(
-                    f"✅ モデルの読み込みが完了しました "
-                    f"(GPU使用: n_gpu_layers={n_gpu_layers}, n_ctx={n_ctx})"
+        cmd = [
+            self._server_bin,
+            "--model", model_path,
+            "--n-gpu-layers", str(n_gpu_layers),
+            "--ctx-size", str(n_ctx),
+            "--threads", str(n_threads),
+            "--host", self._server_host,
+            "--port", str(self._server_port),
+            "--cont-batching",
+        ]
+
+        logger.info("llama-server を起動しています: %s", " ".join(cmd))
+
+        os.makedirs("logs", exist_ok=True)
+        self._log_fd = open("logs/llama-server.log", "w", encoding="utf-8", errors="replace")
+
+        self._process = subprocess.Popen(
+            cmd,
+            stdout=self._log_fd,
+            stderr=self._log_fd,
+            cwd=str(Path(self._server_bin).parent) if Path(self._server_bin).is_absolute() else None,
+        )
+
+        self._wait_for_server()
+
+    def _wait_for_server(self, timeout: int = 300, interval: float = 2.0) -> None:
+        """llama-server が /health に応答するまでポーリングする"""
+        deadline = time.time() + timeout
+        logger.info("llama-server の起動を待機中... (最大 %d 秒)", timeout)
+
+        while time.time() < deadline:
+            # プロセスが死んでいないか確認
+            if self._process and self._process.poll() is not None:
+                raise RuntimeError(
+                    f"llama-server が起動直後に終了しました (終了コード: {self._process.returncode})。"
+                    " 詳細は logs/llama-server.log を確認してください。"
                 )
-            else:
-                logger.info(f"モデルの読み込みが完了しました (CPU のみ, n_ctx={n_ctx})")
-        except Exception as e:
-            if n_gpu_layers != 0:
-                logger.warning(f"GPU ロードに失敗しました ({e})。CPU のみで再試行します...")
-                self.llm = Llama(
-                    model_path=self.model_path,
-                    n_gpu_layers=0,
-                    n_ctx=n_ctx,
-                    n_threads=n_threads,
-                    verbose=True,
-                )
-                logger.info(f"モデルの読み込みが完了しました (CPU のみ, n_ctx={n_ctx})")
-            else:
-                raise
+
+            try:
+                resp = requests.get(f"{self._base_url}/health", timeout=2)
+                if resp.status_code in (200, 503):
+                    # 200 = ok / 503 = loading_model（起動中） どちらも生きている証拠
+                    status = resp.json().get("status", "")
+                    if status == "ok":
+                        logger.info("✅ llama-server が起動しました (port=%d)", self._server_port)
+                        return
+                    # loading_model の場合は待機継続
+            except requests.exceptions.ConnectionError:
+                pass
+            except Exception as exc:
+                logger.debug("llama-server 待機中の例外: %s", exc)
+
+            time.sleep(interval)
+
+        raise TimeoutError(
+            f"llama-server の起動がタイムアウトしました ({timeout} 秒)。"
+            " 詳細は logs/llama-server.log を確認してください。"
+        )
+
+    def shutdown(self) -> None:
+        """llama-server を停止してリソースを解放する"""
+        if self._process is not None:
+            self._process.terminate()
+            try:
+                self._process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
+                self._process.wait()
+            self._process = None
+            logger.info("llama-server をシャットダウンしました")
+
+        if self._log_fd is not None:
+            try:
+                self._log_fd.close()
+            except Exception:
+                pass
+            self._log_fd = None
+
+    # ------------------------------------------------------------------
+    # メッセージ構築
+    # ------------------------------------------------------------------
 
     def _build_messages(
         self,
@@ -85,7 +148,7 @@ class LLMHandler:
         history: Optional[list] = None,
         enable_thinking: bool = True,
     ) -> list:
-        """Qwen3用のメッセージリストを構築"""
+        """Qwen3 用のメッセージリストを構築"""
         messages = []
 
         system_content = (
@@ -105,46 +168,36 @@ class LLMHandler:
                 f"以上の情報を参考に、次の質問に回答してください:\n{query}"
             )
 
-        # enable_thinking=False の場合、/no_think で思考を抑制
         if not enable_thinking:
             user_content += "\n/no_think"
 
         messages.append({"role": "user", "content": user_content})
         return messages
 
-    def parse_thinking(self, response: str) -> Tuple[str, str]:
-        """
-        レスポンスから <think>...</think> を分離
-
-        Returns:
-            (thinking_text, answer_text)
-        """
-        match = THINKING_PATTERN.search(response)
-        if match:
-            thinking = match.group(1).strip()
-            answer = THINKING_PATTERN.sub("", response).strip()
-        else:
-            thinking = ""
-            answer = response.strip()
-        return thinking, answer
+    # ------------------------------------------------------------------
+    # トークン数推定
+    # ------------------------------------------------------------------
 
     def _count_prompt_tokens(self, messages: list) -> int:
-        """メッセージ配列のトークン数を見積もる（可能なら厳密、不可なら概算）。"""
-        if self.llm is not None and hasattr(self.llm, "tokenize"):
-            total = 0
-            for msg in messages:
-                role = msg.get("role", "")
-                content = msg.get("content", "")
-                text = f"<|{role}|>\n{content}\n"
-                try:
-                    tokens = self.llm.tokenize(text.encode("utf-8"), add_bos=False, special=True)
-                except TypeError:
-                    tokens = self.llm.tokenize(text.encode("utf-8"))
-                total += len(tokens)
-            if total > 0:
-                return total
+        """メッセージのトークン数を推定する（llama-server の /tokenize エンドポイント使用）"""
+        try:
+            text = "".join(
+                f"<|{msg.get('role', '')}|>\n{msg.get('content', '')}\n"
+                for msg in messages
+            )
+            resp = requests.post(
+                f"{self._base_url}/tokenize",
+                json={"content": text, "add_special": False},
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                tokens = resp.json().get("tokens", [])
+                if tokens:
+                    return len(tokens)
+        except Exception:
+            pass
 
-        # フォールバック: 日本語混在テキストの概算（4文字 ≒ 1 token）
+        # フォールバック: 日本語混在テキストの概算（4 文字 ≒ 1 token）
         rough_chars = sum(len(str(msg.get("content", ""))) for msg in messages)
         return max(1, rough_chars // 4)
 
@@ -156,7 +209,7 @@ class LLMHandler:
         sampling_config: Optional[Dict] = None,
         enable_thinking: bool = True,
     ) -> Dict[str, Any]:
-        """現在の会話でのコンテキスト使用率（%）を返す。"""
+        """現在の会話でのコンテキスト使用率（%）を返す"""
         cfg = sampling_config or {}
         n_ctx = int(self.config.get("n_ctx", 32768))
         reserve_tokens = int(cfg.get("max_tokens", 8192))
@@ -173,6 +226,78 @@ class LLMHandler:
             "usage_percent": (total_tokens / n_ctx) * 100 if n_ctx > 0 else 0.0,
         }
 
+    # ------------------------------------------------------------------
+    # HTTP ストリーミング
+    # ------------------------------------------------------------------
+
+    def _stream_chat_completion(
+        self,
+        messages: list,
+        cfg: dict,
+    ) -> Generator[Dict[str, Any], None, None]:
+        """llama-server の /v1/chat/completions に POST して SSE チャンクを yield する"""
+        payload = {
+            "messages": messages,
+            "temperature": float(cfg.get("temperature", 0.6)),
+            "top_p": float(cfg.get("top_p", 0.95)),
+            "top_k": int(cfg.get("top_k", 20)),
+            "max_tokens": int(cfg.get("max_tokens", 8192)),
+            "repeat_penalty": float(cfg.get("repeat_penalty", 1.05)),
+            "stream": True,
+        }
+
+        with requests.post(
+            f"{self._base_url}/v1/chat/completions",
+            json=payload,
+            stream=True,
+            timeout=600,
+        ) as resp:
+            resp.raise_for_status()
+            for raw_line in resp.iter_lines():
+                if not raw_line:
+                    continue
+                line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                if not line.startswith("data: "):
+                    continue
+                data_str = line[6:]
+                if data_str == "[DONE]":
+                    break
+                try:
+                    yield json.loads(data_str)
+                except json.JSONDecodeError:
+                    continue
+
+    def create_chat_completion_stream(
+        self,
+        messages: list,
+        cfg: dict,
+    ) -> Generator[Dict[str, Any], None, None]:
+        """
+        game_engine 向け: メッセージを直接受け取り OpenAI 形式のチャンクを yield する。
+        各チャンクは {"choices": [{"delta": {"content": "..."}}]} 形式。
+        """
+        return self._stream_chat_completion(messages, cfg)
+
+    # ------------------------------------------------------------------
+    # 高レベル生成（thinking/answer 分離）
+    # ------------------------------------------------------------------
+
+    def parse_thinking(self, response: str) -> Tuple[str, str]:
+        """
+        レスポンスから <think>...</think> を分離する
+
+        Returns:
+            (thinking_text, answer_text)
+        """
+        match = THINKING_PATTERN.search(response)
+        if match:
+            thinking = match.group(1).strip()
+            answer = THINKING_PATTERN.sub("", response).strip()
+        else:
+            thinking = ""
+            answer = response.strip()
+        return thinking, answer
+
     def generate_with_context(
         self,
         query: str,
@@ -182,10 +307,7 @@ class LLMHandler:
         enable_thinking: bool = True,
     ) -> Generator[Dict[str, Any], None, None]:
         """
-        コンテキスト付きでテキストを生成し、Thinkingと回答をストリーミングで返す
-
-        Args:
-            enable_thinking: Trueで思考モード、Falseで直接回答モード（高速）
+        コンテキスト付きでテキストを生成し、Thinking と回答をストリーミングで返す
 
         Yields:
             {"type": "thinking_chunk", "text": "..."}  ← 思考トークン（逐次）
@@ -195,26 +317,13 @@ class LLMHandler:
         cfg = sampling_config or {}
         messages = self._build_messages(query, context, history, enable_thinking)
 
-        temperature = float(cfg.get("temperature", 0.6))
-
-        stream = self.llm.create_chat_completion(
-            messages=messages,
-            temperature=temperature,
-            top_p=float(cfg.get("top_p", 0.95)),
-            top_k=int(cfg.get("top_k", 20)),
-            max_tokens=int(cfg.get("max_tokens", 8192)),
-            repeat_penalty=1.05,
-            stream=True,
-        )
-
-        # ===== ストリーミング中の thinking/answer 分離 =====
         buffer = ""
         state = "preamble"
         _filter_thinking = not enable_thinking
         _PREAMBLE_MAX = 64
 
-        for chunk in stream:
-            delta = chunk["choices"][0]["delta"].get("content", "")
+        for chunk in self._stream_chat_completion(messages, cfg):
+            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
             if not delta:
                 continue
 
@@ -270,10 +379,3 @@ class LLMHandler:
                 yield {"type": "answer_chunk", "text": buffer}
 
         yield {"type": "done", "text": ""}
-
-    def shutdown(self):
-        """llama-cpp モデルをアンロードしてメモリを解放"""
-        if self.llm is not None:
-            del self.llm
-            self.llm = None
-        logger.info("llama-cpp モデルをシャットダウンしました")

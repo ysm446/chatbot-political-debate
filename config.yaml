@@ -1,9 +1,13 @@
-# モデル設定（llama-cpp-python / GGUF形式）
+# モデル設定（llama-cpp server / GGUF形式）
 model:
   path: "./models/Qwen3-30B-A3B-Q4_K_M.gguf"
   n_gpu_layers: -1
   n_ctx: 32768
   n_threads: 4
+  # llama-cpp server 設定
+  server_bin: "D:/GitHub/llama-b8466-bin-win-cuda-13.1-x64/llama-server.exe"
+  server_port: 8766
+  server_host: "127.0.0.1"
 
 # サンプリング設定
 sampling:
