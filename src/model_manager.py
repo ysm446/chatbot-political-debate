@@ -37,6 +37,14 @@ AVAILABLE_MODELS: Dict[str, Dict[str, Any]] = {
         "vram_gb": 18.6,
         "description": "Qwen3-30B-A3B abliterated版 Q4量子化（安全制限が弱いモデル）",
     },
+    "Huihui-Qwen3.5-35B-A3B-abliterated-Q4_K_M": {
+        "repo_id": "huihui-ai/Huihui-Qwen3.5-35B-A3B-abliterated-GGUF",
+        "filename": "Huihui-Qwen3.5-35B-A3B-abliterated.Q4_K_M.gguf",
+        "local_path": "models/Huihui-Qwen3.5-35B-A3B-abliterated-GGUF/Huihui-Qwen3.5-35B-A3B-abliterated.Q4_K_M.gguf",
+        "size_gb": 20.0,
+        "vram_gb": 20.0,
+        "description": "Qwen3.5-35B-A3B abliterated版 Q4量子化（安全制限が弱いモデル）",
+    },
 }
 
 
