@@ -318,9 +318,8 @@ class LLMHandler:
         messages = self._build_messages(query, context, history, enable_thinking)
 
         buffer = ""
-        state = "preamble"
+        state = "answer" if not enable_thinking else "preamble"
         _filter_thinking = not enable_thinking
-        _PREAMBLE_MAX = 64
 
         for chunk in self._stream_chat_completion(messages, cfg):
             delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
@@ -334,7 +333,8 @@ class LLMHandler:
                     after = buffer.split("<think>", 1)[1]
                     buffer = after
                     state = "filtering_thinking" if _filter_thinking else "thinking"
-                elif len(buffer) > _PREAMBLE_MAX:
+                elif buffer:
+                    # Thinkingタグが出ない通常応答は最初の受信分から流す
                     state = "answer"
                     yield {"type": "answer_chunk", "text": buffer}
                     buffer = ""

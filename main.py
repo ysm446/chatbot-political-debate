@@ -105,6 +105,21 @@ def _normalize_history(history: List[Any]) -> List[dict]:
     return normalized
 
 
+def _trim_history(history: List[dict], max_messages: int = 12, max_chars: int = 12000) -> List[dict]:
+    """直近の会話だけを残してプロンプト肥大化を抑える。"""
+    if not history:
+        return []
+
+    trimmed = history[-max_messages:]
+    total_chars = sum(len(msg.get("content", "")) for msg in trimmed)
+
+    while len(trimmed) > 2 and total_chars > max_chars:
+        removed = trimmed.pop(0)
+        total_chars -= len(removed.get("content", ""))
+
+    return trimmed
+
+
 def _format_context_usage_text(usage: dict) -> str:
     usage_percent = float(usage.get("usage_percent", 0.0))
     prompt_percent = float(usage.get("prompt_percent", 0.0))
@@ -140,7 +155,7 @@ def process_query(
 ) -> Generator[Dict[str, Any], None, None]:
     sampling_config = config.get("sampling", {})
 
-    normalized_history = _normalize_history(history)
+    normalized_history = _trim_history(_normalize_history(history))
     llm_history: List[Dict[str, str]] = []
     for msg in normalized_history:
         role = msg.get("role", "")
@@ -152,20 +167,7 @@ def process_query(
 
     answer_text = ""
     status = "応答を準備中..."
-    context_usage_text = "計算中..."
-
-    try:
-        usage = llm.estimate_context_usage(
-            query=query,
-            context=None,
-            history=llm_history if llm_history else None,
-            sampling_config=sampling_config,
-            enable_thinking=False,
-        )
-        context_usage_text = _format_context_usage_text(usage)
-    except Exception as exc:
-        logger.warning("コンテキスト使用率の計算に失敗: %s", exc)
-        context_usage_text = "計算失敗"
+    context_usage_text = "計算省略"
 
     yield {
         "event": "status",
