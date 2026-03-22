@@ -1,145 +1,129 @@
 """
-モデル管理モジュール（GGUF形式 / llama-cpp-python 対応）
-利用可能なモデルの一覧管理・ダウンロード・切り替えを担当
+モデル管理モジュール
+models ディレクトリ配下のローカル GGUF モデル一覧・切り替え用情報を管理する。
 """
-import time
-import threading
 import logging
 from pathlib import Path
-from typing import Dict, Any, Generator
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
-# ダウンロード可能なモデル一覧（GGUF形式）
-# repo_id / filename は HuggingFace 上の実際のパスを確認のうえ使用してください
-AVAILABLE_MODELS: Dict[str, Dict[str, Any]] = {
-    "Qwen3-14B-Q4_K_M": {
-        "repo_id": "Qwen/Qwen3-14B-GGUF",
-        "filename": "Qwen3-14B-Q4_K_M.gguf",
-        "local_path": "models/Qwen3-14B-Q4_K_M.gguf",
-        "size_gb": 8.8,
-        "vram_gb": 8.8,
-        "description": "14B Q4量子化・高精度・大型タスク向け",
-    },
-    "Qwen3-30B-A3B-Q4_K_M": {
-        "repo_id": "Qwen/Qwen3-30B-A3B-GGUF",
-        "filename": "Qwen3-30B-A3B-Q4_K_M.gguf",
-        "local_path": "models/Qwen3-30B-A3B-Q4_K_M.gguf",
-        "size_gb": 18.0,
-        "vram_gb": 18.0,
-        "description": "30B MoE（実効3B）Q4量子化・最高精度・RTX PRO 5000推奨",
-    },
-    "Qwen3-30B-A3B-abliterated-Q4_K_M": {
-        "repo_id": "DevQuasar/huihui-ai.Qwen3-30B-A3B-abliterated-GGUF",
-        "filename": "huihui-ai.Qwen3-30B-A3B-abliterated.Q4_K_M.gguf",
-        "local_path": "models/huihui-ai.Qwen3-30B-A3B-abliterated.Q4_K_M.gguf",
-        "size_gb": 18.6,
-        "vram_gb": 18.6,
-        "description": "Qwen3-30B-A3B abliterated版 Q4量子化（安全制限が弱いモデル）",
-    },
-    "Huihui-Qwen3.5-35B-A3B-abliterated-Q4_K_M": {
-        "repo_id": "huihui-ai/Huihui-Qwen3.5-35B-A3B-abliterated-GGUF",
-        "filename": "Huihui-Qwen3.5-35B-A3B-abliterated.Q4_K_M.gguf",
-        "local_path": "models/Huihui-Qwen3.5-35B-A3B-abliterated-GGUF/Huihui-Qwen3.5-35B-A3B-abliterated.Q4_K_M.gguf",
-        "size_gb": 20.0,
-        "vram_gb": 20.0,
-        "description": "Qwen3.5-35B-A3B abliterated版 Q4量子化（安全制限が弱いモデル）",
-    },
+MODELS_DIR = Path("models")
+
+# 旧バージョンの保存済み active_model_key との互換用
+LEGACY_MODEL_ALIASES: Dict[str, str] = {
+    "Qwen3-14B-Q4_K_M": "Qwen3-14B-Q4_K_M.gguf",
+    "Qwen3-30B-A3B-Q4_K_M": "Qwen3-30B-A3B-Q4_K_M.gguf",
+    "Qwen3-30B-A3B-abliterated-Q4_K_M": "huihui-ai.Qwen3-30B-A3B-abliterated.Q4_K_M.gguf",
+    "Huihui-Qwen3.5-35B-A3B-abliterated-Q4_K_M": (
+        "Huihui-Qwen3.5-35B-A3B-abliterated-GGUF/"
+        "Huihui-Qwen3.5-35B-A3B-abliterated.Q4_K_M.gguf"
+    ),
 }
 
 
-def is_downloaded(model_key: str) -> bool:
-    """モデルがダウンロード済みかどうかを確認"""
-    info = AVAILABLE_MODELS.get(model_key)
-    if not info:
+def _is_hidden_or_cache(path: Path) -> bool:
+    return any(part.startswith(".") for part in path.parts) or ".cache" in path.parts
+
+
+def _is_supported_model_file(path: Path) -> bool:
+    if path.suffix.lower() != ".gguf":
         return False
-    return Path(info["local_path"]).exists()
+    if "mmproj" in path.name.lower():
+        return False
+    return True
+
+
+def _resolve_candidate_path(model_key: str) -> Path:
+    normalized_key = (model_key or "").replace("\\", "/").strip().lstrip("./")
+    legacy_target = LEGACY_MODEL_ALIASES.get(normalized_key, normalized_key)
+    return MODELS_DIR / Path(legacy_target)
+
+
+def list_local_models() -> List[Dict[str, Any]]:
+    """models 配下の利用可能な GGUF モデルを再帰的に列挙する。"""
+    if not MODELS_DIR.exists():
+        return []
+
+    rows: List[Dict[str, Any]] = []
+    for path in sorted(MODELS_DIR.rglob("*.gguf")):
+        rel_path = path.relative_to(MODELS_DIR)
+        if _is_hidden_or_cache(rel_path) or not _is_supported_model_file(path):
+            continue
+
+        size_gb = round(path.stat().st_size / (1024 ** 3), 2)
+        parent_label = rel_path.parent.as_posix() if rel_path.parent != Path(".") else "models"
+        rows.append(
+            {
+                "key": rel_path.as_posix(),
+                "name": path.stem,
+                "path": rel_path.as_posix(),
+                "size_gb": size_gb,
+                "vram_gb": None,
+                "description": f"ローカルモデル ({parent_label})",
+            }
+        )
+
+    return rows
+
+
+def is_downloaded(model_key: str) -> bool:
+    """後方互換用。指定モデルがローカルに存在するかを返す。"""
+    return get_model_path(model_key) != ""
 
 
 def get_downloaded_models() -> list:
-    """ダウンロード済みモデルのキー一覧を返す"""
-    return [key for key in AVAILABLE_MODELS if is_downloaded(key)]
+    """後方互換用。利用可能モデルのキー一覧を返す。"""
+    return [row["key"] for row in list_local_models()]
 
 
 def get_model_path(model_key: str) -> str:
-    """モデルの GGUFファイルパスを返す"""
-    return AVAILABLE_MODELS[model_key]["local_path"]
+    """モデルキーから GGUF ファイルの実パスを返す。"""
+    if not model_key:
+        return ""
+
+    candidate = _resolve_candidate_path(model_key)
+    if candidate.exists() and candidate.is_file() and _is_supported_model_file(candidate):
+        return str(candidate)
+
+    normalized_key = model_key.replace("\\", "/")
+    for row in list_local_models():
+        if row["key"] == normalized_key or row["name"] == normalized_key:
+            return str(MODELS_DIR / row["path"])
+
+    return ""
+
+
+def find_model_key(model_path: str) -> str:
+    """モデルパスから UI 用のモデルキーを返す。"""
+    try:
+        rel_path = Path(model_path).resolve().relative_to(MODELS_DIR.resolve())
+        rel_key = rel_path.as_posix()
+    except Exception:
+        rel_key = model_path.replace("\\", "/").strip().lstrip("./")
+
+    for row in list_local_models():
+        if row["key"] == rel_key:
+            return row["key"]
+
+    for legacy_key, legacy_path in LEGACY_MODEL_ALIASES.items():
+        if legacy_path.replace("\\", "/") == rel_key:
+            return rel_key
+
+    return ""
 
 
 def build_status_markdown(active_model_key: str = "") -> str:
-    """モデル一覧のMarkdownテーブルを生成"""
+    """モデル一覧の Markdown テーブルを生成する。"""
     lines = [
-        "| モデル | サイズ | VRAM目安 | 状態 | 説明 |",
-        "|---|---|---|---|---|",
+        "| モデル | サイズ | 状態 | 説明 |",
+        "|---|---|---|---|",
     ]
-    for key, info in AVAILABLE_MODELS.items():
-        downloaded = "✅ 済" if is_downloaded(key) else "⬜ 未"
-        active = " ▶ 使用中" if key == active_model_key else ""
+
+    for row in list_local_models():
+        active = "使用中" if row["key"] == active_model_key else "利用可"
         lines.append(
-            f"| **{key}**{active} | {info['size_gb']}GB | "
-            f"~{info['vram_gb']}GB | {downloaded} | {info['description']} |"
+            f"| **{row['name']}** | {row['size_gb']}GB | {active} | {row['path']} |"
         )
+
     return "\n".join(lines)
-
-
-def download_model(model_key: str) -> Generator[str, None, None]:
-    """
-    GGUF モデルをダウンロードし、進捗をyieldするジェネレータ
-
-    Yields:
-        str: 進捗メッセージ
-    """
-    from huggingface_hub import hf_hub_download
-
-    info = AVAILABLE_MODELS.get(model_key)
-    if not info:
-        yield f"❌ 不明なモデル: {model_key}"
-        return
-
-    if is_downloaded(model_key):
-        yield f"✅ {model_key} はすでにダウンロード済みです。"
-        return
-
-    local_path = Path(info["local_path"])
-    local_path.parent.mkdir(parents=True, exist_ok=True)
-
-    yield (
-        f"📥 ダウンロード開始: {info['repo_id']} / {info['filename']}\n"
-        f"推定サイズ: {info['size_gb']}GB\n"
-        f"保存先: {local_path.resolve()}"
-    )
-
-    result: Dict[str, Any] = {"done": False, "error": None}
-
-    def _run():
-        try:
-            hf_hub_download(
-                repo_id=info["repo_id"],
-                filename=info["filename"],
-                local_dir=str(local_path.parent),
-                local_dir_use_symlinks=False,
-            )
-            result["done"] = True
-        except Exception as e:
-            result["error"] = e
-
-    thread = threading.Thread(target=_run, daemon=True)
-    thread.start()
-
-    start = time.time()
-    while not result["done"] and result["error"] is None:
-        elapsed = int(time.time() - start)
-        size_bytes = local_path.stat().st_size if local_path.exists() else 0
-        downloaded_gb = size_bytes / (1024 ** 3)
-        yield (
-            f"📥 ダウンロード中... {downloaded_gb:.2f} / {info['size_gb']}GB "
-            f"({elapsed}秒経過)"
-        )
-        time.sleep(2)
-
-    thread.join()
-
-    if result["error"]:
-        yield f"❌ エラー: {result['error']}"
-    else:
-        yield f"✅ ダウンロード完了！ {model_key}\n保存先: {local_path.resolve()}"

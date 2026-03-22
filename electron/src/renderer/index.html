@@ -32,17 +32,11 @@
                 <button id="stopBtn" class="secondary">停止</button>
                 <button id="clearBtn" class="secondary">クリア</button>
               </div>
-              <details class="thinking-block">
-                <summary>思考プロセス</summary>
-                <div id="thinking"></div>
-              </details>
             </section>
 
             <aside class="side-panel">
               <section class="card">
                 <h2>設定</h2>
-                <label><input type="checkbox" id="enableThinkingMode" /> Thinkingモード</label>
-                <label><input type="checkbox" id="showThinking" /> 思考表示</label>
                 <label>
                   Temperature
                   <input type="range" id="temperature" min="0" max="1" step="0.05" />
@@ -68,16 +62,10 @@
               <button id="unloadModelBtn" class="secondary">アンロード</button>
             </div>
             <label>
-              切り替えモデル
+              読み込むモデル
               <select id="switchModelSelect"></select>
             </label>
             <button id="switchModelBtn">切り替え</button>
-            <label>
-              ダウンロードモデル
-              <select id="downloadModelSelect"></select>
-            </label>
-            <button id="downloadModelBtn">ダウンロード</button>
-            <pre id="downloadProgress" class="progress"></pre>
           </section>
         </section>
       </main>

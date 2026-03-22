@@ -174,20 +174,6 @@ button.secondary {
   background: #4a5568;
 }
 
-.thinking-block {
-  margin-top: 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px;
-  background: #181c22;
-}
-
-.thinking-block #thinking {
-  white-space: pre-wrap;
-  max-height: 220px;
-  overflow-y: auto;
-}
-
 .side-panel {
   display: grid;
   gap: 10px;

@@ -87,7 +87,7 @@ function renderModelList(models) {
     const card = document.createElement('div');
     card.className = 'model-card' +
       (m.active ? ' is-active' : '') +
-      (m.downloaded && !m.active ? ' is-switchable' : '');
+      (!m.active ? ' is-switchable' : '');
     card.dataset.key = m.key;
 
     let badgeClass;
@@ -95,24 +95,21 @@ function renderModelList(models) {
     if (m.active) {
       badgeClass = 'active';
       badgeText = '使用中';
-    } else if (m.downloaded) {
+    } else {
       badgeClass = 'available';
       badgeText = '切り替え';
-    } else {
-      badgeClass = 'unavailable';
-      badgeText = '未ダウンロード';
     }
 
     card.innerHTML = `
       <div class="model-info">
-        <div class="model-name">${escHtml(m.key)}</div>
+        <div class="model-name">${escHtml(m.name || m.key)}</div>
         <div class="model-desc">${escHtml(m.description || '')}</div>
-        <div class="model-meta">${m.size_gb ? `${m.size_gb}GB` : ''} ${m.vram_gb ? `/ VRAM ~${m.vram_gb}GB` : ''}</div>
+        <div class="model-meta">${m.size_gb ? `${m.size_gb}GB` : ''} ${m.path ? `/ ${escHtml(m.path)}` : ''}</div>
       </div>
       <div class="model-badge ${badgeClass}">${badgeText}</div>
     `;
 
-    if (m.downloaded && !m.active) {
+    if (!m.active) {
       card.addEventListener('click', () => switchModel(m.key, card));
     }
     modelList.appendChild(card);

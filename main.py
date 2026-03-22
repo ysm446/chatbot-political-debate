@@ -8,7 +8,7 @@ import json
 import logging
 import re
 import sys
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,8 +35,6 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: List[ChatMessage] = Field(default_factory=list)
-    show_thinking: bool = True
-    enable_thinking_mode: bool = True
     temperature: float = 0.6
     max_tokens: int = 8192
 
@@ -45,13 +43,7 @@ class ModelSwitchRequest(BaseModel):
     model_key: str
 
 
-class ModelDownloadRequest(BaseModel):
-    model_key: str
-
-
 class SettingsRequest(BaseModel):
-    enable_thinking_mode: bool
-    show_thinking: bool
     temperature: float
     max_tokens: int
 
@@ -83,10 +75,10 @@ def _resolve_startup_model(config: dict) -> tuple[dict, str, str]:
     resolved_config["model"] = resolved_model_config
 
     saved_model_key = load_settings().get("active_model_key", "")
-    if saved_model_key and model_manager.is_downloaded(saved_model_key):
+    if saved_model_key and model_manager.get_model_path(saved_model_key):
         model_path = model_manager.get_model_path(saved_model_key)
         resolved_model_config["path"] = model_path
-        return resolved_config, model_path, saved_model_key
+        return resolved_config, model_path, model_manager.find_model_key(model_path)
 
     model_path = resolved_model_config.get("path", "./models/Qwen3-30B-A3B-Q4_K_M.gguf")
     return resolved_config, model_path, _detect_active_model(model_path) if check_model_exists(model_path) else ""
@@ -135,12 +127,9 @@ def _format_context_usage_text(usage: dict) -> str:
 
 
 def _detect_active_model(model_path: str) -> str:
-    from src.model_manager import AVAILABLE_MODELS
+    from src import model_manager
 
-    for key, info in AVAILABLE_MODELS.items():
-        if info["local_path"].replace("\\", "/") in model_path.replace("\\", "/"):
-            return key
-    return ""
+    return model_manager.find_model_key(model_path)
 
 
 def process_query(
@@ -148,11 +137,7 @@ def process_query(
     history: List[dict],
     llm,
     config: dict,
-    show_thinking: bool = True,
-    enable_thinking_mode: bool = True,
 ) -> Generator[Dict[str, Any], None, None]:
-    from src.utils import format_thinking_html
-
     sampling_config = config.get("sampling", {})
 
     normalized_history = _normalize_history(history)
@@ -165,9 +150,8 @@ def process_query(
         elif role == "assistant":
             llm_history.append({"role": "assistant", "content": re.sub(r"<[^>]+>", "", content)})
 
-    thinking_text = ""
     answer_text = ""
-    status = "💭 思考中..."
+    status = "応答を準備中..."
     context_usage_text = "計算中..."
 
     try:
@@ -176,7 +160,7 @@ def process_query(
             context=None,
             history=llm_history if llm_history else None,
             sampling_config=sampling_config,
-            enable_thinking=enable_thinking_mode,
+            enable_thinking=False,
         )
         context_usage_text = _format_context_usage_text(usage)
     except Exception as exc:
@@ -187,7 +171,7 @@ def process_query(
         "event": "status",
         "status": status,
         "context_usage": context_usage_text,
-        "answer": "💭 考えています...",
+        "answer": "回答を準備しています...",
         "thinking": "",
     }
 
@@ -197,29 +181,18 @@ def process_query(
             context=None,
             history=llm_history if llm_history else None,
             sampling_config=sampling_config,
-            enable_thinking=enable_thinking_mode,
+            enable_thinking=False,
         ):
             chunk_type = chunk.get("type")
             chunk_text = chunk.get("text", "")
 
-            if chunk_type == "thinking_chunk":
-                thinking_text += chunk_text
-                if show_thinking:
-                    yield {
-                        "event": "thinking",
-                        "status": "💭 思考中...",
-                        "context_usage": context_usage_text,
-                        "thinking": format_thinking_html(thinking_text),
-                        "answer": answer_text,
-                    }
-
-            elif chunk_type == "answer_chunk":
+            if chunk_type == "answer_chunk":
                 answer_text += chunk_text
                 yield {
                     "event": "answer",
                     "status": "✍️ 回答生成中...",
                     "context_usage": context_usage_text,
-                    "thinking": format_thinking_html(thinking_text) if (show_thinking and thinking_text) else "",
+                    "thinking": "",
                     "answer": answer_text,
                 }
 
@@ -231,13 +204,11 @@ def process_query(
         answer_text = f"エラーが発生しました: {str(exc)}"
         status = "❌ エラー"
 
-    final_thinking = format_thinking_html(thinking_text) if (show_thinking and thinking_text) else ""
-
     yield {
         "event": "final",
         "status": "✅ 完了" if status != "❌ エラー" else status,
         "context_usage": context_usage_text,
-        "thinking": final_thinking,
+        "thinking": "",
         "answer": answer_text,
     }
 
@@ -291,24 +262,20 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     @app.get("/api/bootstrap")
     async def bootstrap() -> Dict[str, Any]:
         settings = load_settings()
-        downloaded = set(model_manager.get_downloaded_models())
-
         models = []
-        for key, info in model_manager.AVAILABLE_MODELS.items():
+        for row in model_manager.list_local_models():
             models.append(
                 {
-                    "key": key,
-                    "downloaded": key in downloaded,
-                    "size_gb": info.get("size_gb"),
-                    "vram_gb": info.get("vram_gb"),
-                    "description": info.get("description", ""),
+                    **row,
+                    "available": True,
+                    "downloaded": True,
+                    "active": row["key"] == app_state.get("active_model_key", ""),
                 }
             )
 
         return {
             "settings": settings,
             "defaults": {
-                "show_thinking": config.get("display", {}).get("show_thinking", True),
                 "temperature": config.get("sampling", {}).get("temperature", 0.6),
                 "max_tokens": config.get("sampling", {}).get("max_tokens", 8192),
             },
@@ -328,7 +295,7 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
         if llm_container.get("llm") is None:
             raise HTTPException(
                 status_code=503,
-                detail="モデルが読み込まれていません。モデル管理ページからダウンロードまたは切り替えを行ってください",
+                detail="モデルが読み込まれていません。モデル管理ページからローカルモデルを選択して読み込んでください",
             )
 
         sampling_config = {
@@ -344,8 +311,6 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
                 history=[msg.model_dump() for msg in payload.history],
                 llm=llm_container["llm"],
                 config=current_config,
-                show_thinking=payload.show_thinking,
-                enable_thinking_mode=payload.enable_thinking_mode,
             ):
                 yield f"data: {json.dumps(event_payload, ensure_ascii=False)}\n\n"
 
@@ -353,39 +318,17 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
 
     @app.get("/api/models")
     async def models() -> Dict[str, Any]:
-        downloaded = set(model_manager.get_downloaded_models())
         rows = []
-        for key, info in model_manager.AVAILABLE_MODELS.items():
+        for row in model_manager.list_local_models():
             rows.append(
                 {
-                    "key": key,
-                    "downloaded": key in downloaded,
-                    "active": key == app_state.get("active_model_key", ""),
-                    "size_gb": info.get("size_gb"),
-                    "vram_gb": info.get("vram_gb"),
-                    "description": info.get("description", ""),
+                    **row,
+                    "available": True,
+                    "downloaded": True,
+                    "active": row["key"] == app_state.get("active_model_key", ""),
                 }
             )
         return {"models": rows}
-
-    @app.post("/api/models/download/stream")
-    async def download_stream(payload: ModelDownloadRequest):
-        if not payload.model_key:
-            raise HTTPException(status_code=400, detail="model_key is required")
-
-        async def event_gen() -> AsyncGenerator[str, None]:
-            for msg in model_manager.download_model(payload.model_key):
-                event = {"event": "progress", "message": msg}
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-                await asyncio.sleep(0)
-
-            refreshed = {
-                "event": "done",
-                "models": (await models())["models"],
-            }
-            yield f"data: {json.dumps(refreshed, ensure_ascii=False)}\n\n"
-
-        return StreamingResponse(event_gen(), media_type="text/event-stream")
 
     @app.post("/api/models/unload")
     async def unload_model() -> Dict[str, Any]:
@@ -407,6 +350,10 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
         except ImportError:
             pass
 
+        current = load_settings()
+        current["active_model_key"] = ""
+        save_settings(current)
+
         return {"ok": True, "message": "アンロード完了。VRAMを解放しました"}
 
     @app.post("/api/models/switch")
@@ -415,8 +362,9 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
         if not model_key:
             raise HTTPException(status_code=400, detail="model_key is required")
 
-        if not model_manager.is_downloaded(model_key):
-            raise HTTPException(status_code=400, detail=f"{model_key} はダウンロードされていません")
+        model_path = model_manager.get_model_path(model_key)
+        if not model_path:
+            raise HTTPException(status_code=400, detail=f"{model_key} は models フォルダ内に見つかりません")
 
         if model_key == app_state.get("active_model_key", ""):
             return {"ok": True, "message": f"{model_key} はすでに使用中です"}
@@ -438,19 +386,19 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
                 except ImportError:
                     pass
 
-            model_path = model_manager.get_model_path(model_key)
             model_config = config.get("model", {})
             new_llm = LLMHandler(model_path=model_path, config=model_config)
             llm_container["llm"] = new_llm
-            app_state["active_model_key"] = model_key
+            resolved_key = model_manager.find_model_key(model_path) or model_key
+            app_state["active_model_key"] = resolved_key
 
             from src.utils import save_settings, load_settings
 
             current = load_settings()
-            current["active_model_key"] = model_key
+            current["active_model_key"] = resolved_key
             save_settings(current)
 
-            return {"ok": True, "message": f"{model_key} への切り替えが完了しました"}
+            return {"ok": True, "message": f"{resolved_key} への切り替えが完了しました"}
         except Exception as exc:
             logger.exception("モデル切り替えエラー: %s", exc)
             raise HTTPException(status_code=500, detail=str(exc))

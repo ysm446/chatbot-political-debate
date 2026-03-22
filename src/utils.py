@@ -12,8 +12,6 @@ from typing import Dict, Any, Optional
 SETTINGS_PATH = Path("settings.json")
 
 DEFAULT_SETTINGS = {
-    "enable_thinking_mode": True,
-    "show_thinking": True,
     "temperature": 0.6,
     "max_tokens": 8192,
     "active_model_key": "",
@@ -126,33 +124,4 @@ def check_model_exists(model_path: str) -> bool:
     """
     path = Path(model_path)
     return path.exists() and path.is_file()
-
-
-def format_thinking_html(thinking_text: str) -> str:
-    """
-    Thinkingテキストを折りたたみHTML形式に変換
-
-    Args:
-        thinking_text: Thinkingプロセスのテキスト
-
-    Returns:
-        HTML形式の折りたたみブロック
-    """
-    if not thinking_text:
-        return ""
-
-    # 長すぎる場合は省略
-    max_len = 2000
-    if len(thinking_text) > max_len:
-        display_text = thinking_text[:max_len] + f"\n\n...（{len(thinking_text) - max_len}文字省略）"
-    else:
-        display_text = thinking_text
-
-    return (
-        f'<details>\n'
-        f'<summary>💭 思考プロセス（クリックで展開）</summary>\n\n'
-        f'```\n{display_text}\n```\n'
-        f'</details>'
-    )
-
 

@@ -4,8 +4,6 @@ const state = {
   history: [],
   controller: null,
   settings: {
-    enable_thinking_mode: true,
-    show_thinking: true,
     temperature: 0.6,
     max_tokens: 8192,
   },
@@ -15,15 +13,12 @@ const state = {
 
 const el = {
   chatLog: document.getElementById('chatLog'),
-  thinking: document.getElementById('thinking'),
   status: document.getElementById('status'),
   contextUsage: document.getElementById('contextUsage'),
   messageInput: document.getElementById('messageInput'),
   sendBtn: document.getElementById('sendBtn'),
   stopBtn: document.getElementById('stopBtn'),
   clearBtn: document.getElementById('clearBtn'),
-  enableThinkingMode: document.getElementById('enableThinkingMode'),
-  showThinking: document.getElementById('showThinking'),
   temperature: document.getElementById('temperature'),
   temperatureValue: document.getElementById('temperatureValue'),
   maxTokens: document.getElementById('maxTokens'),
@@ -38,9 +33,6 @@ const el = {
   unloadModelBtn: document.getElementById('unloadModelBtn'),
   switchModelSelect: document.getElementById('switchModelSelect'),
   switchModelBtn: document.getElementById('switchModelBtn'),
-  downloadModelSelect: document.getElementById('downloadModelSelect'),
-  downloadModelBtn: document.getElementById('downloadModelBtn'),
-  downloadProgress: document.getElementById('downloadProgress'),
 };
 
 function appendMessage(role, content) {
@@ -68,8 +60,6 @@ function updateStatus(status, contextUsage) {
 }
 
 function syncSettingsToUi() {
-  el.enableThinkingMode.checked = state.settings.enable_thinking_mode;
-  el.showThinking.checked = state.settings.show_thinking;
   el.temperature.value = String(state.settings.temperature);
   el.temperatureValue.textContent = String(state.settings.temperature);
   el.maxTokens.value = String(state.settings.max_tokens);
@@ -78,8 +68,6 @@ function syncSettingsToUi() {
 
 function readSettingsFromUi() {
   state.settings = {
-    enable_thinking_mode: el.enableThinkingMode.checked,
-    show_thinking: el.showThinking.checked,
     temperature: Number(el.temperature.value),
     max_tokens: Number(el.maxTokens.value),
   };
@@ -99,26 +87,21 @@ async function saveSettings() {
 
 function refreshModelSelectors() {
   el.switchModelSelect.innerHTML = '';
-  el.downloadModelSelect.innerHTML = '';
 
   for (const model of state.models) {
     const switchOpt = document.createElement('option');
     switchOpt.value = model.key;
-    switchOpt.textContent = `${model.key}${model.downloaded ? '' : ' (未DL)'}`;
+    switchOpt.textContent = model.path || model.key;
     if (model.active) switchOpt.selected = true;
     el.switchModelSelect.appendChild(switchOpt);
-
-    const downloadOpt = document.createElement('option');
-    downloadOpt.value = model.key;
-    downloadOpt.textContent = model.key;
-    el.downloadModelSelect.appendChild(downloadOpt);
   }
 }
 
 function renderModels() {
   const rows = state.models.map((m) => {
-    const flags = [m.downloaded ? 'DL済み' : '未DL', m.active ? '使用中' : ''];
-    return `• ${m.key} | ${m.size_gb}GB | ${m.vram_gb}GB | ${flags.filter(Boolean).join(' / ')}\n  ${m.description}`;
+    const flags = [m.active ? '使用中' : '利用可能'];
+    const sizeText = m.size_gb ? `${m.size_gb}GB` : '-';
+    return `• ${m.name || m.key} | ${sizeText} | ${flags.join(' / ')}\n  ${m.path || m.key}`;
   });
   el.modelList.textContent = rows.join('\n\n') || 'モデル情報なし';
   refreshModelSelectors();
@@ -142,8 +125,6 @@ async function loadBootstrap() {
   const data = await res.json();
 
   state.settings = {
-    enable_thinking_mode: data.settings.enable_thinking_mode ?? true,
-    show_thinking: data.settings.show_thinking ?? data.defaults.show_thinking,
     temperature: data.settings.temperature ?? data.defaults.temperature,
     max_tokens: data.settings.max_tokens ?? data.defaults.max_tokens,
   };
@@ -161,6 +142,7 @@ async function loadModels() {
   }
   const data = await res.json();
   state.models = data.models || [];
+  state.activeModel = state.models.find((model) => model.active)?.key || '';
   renderModels();
 }
 
@@ -219,14 +201,11 @@ async function sendMessage() {
 
   appendMessage('user', message);
   replaceOrAppendAssistant('');
-  el.thinking.textContent = '';
   el.messageInput.value = '';
 
   const payload = {
     message,
     history: state.history,
-    show_thinking: el.showThinking.checked,
-    enable_thinking_mode: el.enableThinkingMode.checked,
     temperature: Number(el.temperature.value),
     max_tokens: Number(el.maxTokens.value),
   };
@@ -237,11 +216,6 @@ async function sendMessage() {
 
       if (typeof event.answer === 'string') {
         replaceOrAppendAssistant(event.answer);
-      }
-
-      if (typeof event.thinking === 'string') {
-        // details内のmarkdown/HTMLタグはそのまま表示せずテキストで扱う
-        el.thinking.textContent = event.thinking.replace(/<[^>]+>/g, '');
       }
 
       if (event.event === 'final') {
@@ -283,28 +257,6 @@ async function unloadModel() {
   await loadModels();
 }
 
-async function downloadModel() {
-  const model_key = el.downloadModelSelect.value;
-  if (!model_key) return;
-
-  el.downloadProgress.textContent = '';
-
-  await streamJsonPost(
-    `${baseUrl}/api/models/download/stream`,
-    { model_key },
-    (event) => {
-      if (event.event === 'progress') {
-        el.downloadProgress.textContent += `${event.message}\n`;
-        el.downloadProgress.scrollTop = el.downloadProgress.scrollHeight;
-      }
-      if (event.event === 'done') {
-        state.models = event.models || state.models;
-        renderModels();
-      }
-    }
-  );
-}
-
 function bindEvents() {
   el.tabChatBtn.addEventListener('click', () => setActiveTab('chat'));
   el.tabModelsBtn.addEventListener('click', () => setActiveTab('models'));
@@ -327,7 +279,6 @@ function bindEvents() {
   el.clearBtn.addEventListener('click', () => {
     state.history = [];
     el.chatLog.innerHTML = '';
-    el.thinking.textContent = '';
     updateStatus('待機中', '計算待ち');
   });
 
@@ -367,15 +318,6 @@ function bindEvents() {
   el.unloadModelBtn.addEventListener('click', async () => {
     try {
       await unloadModel();
-    } catch (err) {
-      updateStatus(`❌ ${err.message}`);
-    }
-  });
-
-  el.downloadModelBtn.addEventListener('click', async () => {
-    try {
-      await downloadModel();
-      updateStatus('✅ ダウンロード処理終了');
     } catch (err) {
       updateStatus(`❌ ${err.message}`);
     }
