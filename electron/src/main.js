@@ -108,10 +108,10 @@ app.on('before-quit', (event) => {
   };
 
   // llama-server を先に停止してから Python プロセスを終了する
-  fetch(`${API_URL}/api/shutdown`, { method: 'POST', signal: AbortSignal.timeout(8000) })
+  fetch(`${API_URL}/api/shutdown`, { method: 'POST', signal: AbortSignal.timeout(20000) })
     .then(() => {
-      // Python 側が os._exit(0) で自ら終了するので少し待つ
-      setTimeout(forceKill, 1000);
+      // Python 側で llama-server 停止とVRAM解放を終えてから終了させる
+      setTimeout(forceKill, 2000);
     })
     .catch(() => {
       // HTTP 呼び出し失敗時は強制終了

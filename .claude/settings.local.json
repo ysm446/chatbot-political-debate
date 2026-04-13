@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(//d/GitHub/llama-b8466-bin-win-cuda-13.1-x64/**)"
+      "Read(//d/GitHub/chatbot-political-debate/bin/llama-server/llama-b8648-bin-win-cuda-13.1-x64/**)"
     ]
   }
 }

@@ -5,7 +5,7 @@ model:
   n_ctx: 32768
   n_threads: 4
   # llama-cpp server 設定
-  server_bin: "D:/GitHub/llama-b8466-bin-win-cuda-13.1-x64/llama-server.exe"
+  server_bin: "D:/GitHub/chatbot-political-debate/bin/llama-server/llama-b8648-bin-win-cuda-13.1-x64/llama-server.exe"
   server_port: 8766
   server_host: "127.0.0.1"
 
@@ -23,7 +23,7 @@ api:
 
 # 表示設定
 display:
-  show_thinking: true
+  show_thinking: false
   stream_output: true
 
 # Stable Diffusion設定（WebUI Forge 2）

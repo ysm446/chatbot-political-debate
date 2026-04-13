@@ -4,10 +4,15 @@ Gradioを廃止し、Electron UI向けに FastAPI + SSE を提供する。
 """
 import argparse
 import asyncio
+import atexit
+import gc
 import json
 import logging
+import os
 import re
+import signal
 import sys
+import threading
 from typing import Any, Dict, Generator, List, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -238,6 +243,71 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
         )
 
     app_state = {"active_model_key": initial_active_model_key}
+    cleanup_lock = threading.Lock()
+    cleanup_state = {"done": False}
+
+    def release_model_resources(clear_active_model: bool = False) -> None:
+        """ロード中モデルと関連GPUリソースを確実に解放する。"""
+        with cleanup_lock:
+            if cleanup_state["done"]:
+                return
+            cleanup_state["done"] = True
+
+        llm = llm_container.get("llm")
+        if llm is not None:
+            try:
+                llm.shutdown()
+            except Exception:
+                logger.exception("LLMシャットダウン中にエラーが発生しました")
+            finally:
+                llm_container["llm"] = None
+
+        gc.collect()
+
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                try:
+                    torch.cuda.synchronize()
+                except Exception:
+                    logger.debug("CUDA synchronize に失敗しました", exc_info=True)
+                torch.cuda.empty_cache()
+                try:
+                    torch.cuda.ipc_collect()
+                except Exception:
+                    logger.debug("CUDA IPC キャッシュ解放をスキップしました", exc_info=True)
+        except ImportError:
+            pass
+        except Exception:
+            logger.debug("CUDAキャッシュ解放中に例外が発生しました", exc_info=True)
+
+        if clear_active_model:
+            app_state["active_model_key"] = ""
+            try:
+                current = load_settings()
+                current["active_model_key"] = ""
+                save_settings(current)
+            except Exception:
+                logger.exception("active_model_key の保存中にエラーが発生しました")
+
+    def release_model_resources_on_exit() -> None:
+        release_model_resources(clear_active_model=False)
+
+    def handle_exit_signal(signum, _frame) -> None:
+        logger.info("終了シグナルを受信しました: %s", signum)
+        release_model_resources_on_exit()
+        raise SystemExit(0)
+
+    atexit.register(release_model_resources_on_exit)
+    for sig_name in ("SIGINT", "SIGTERM", "SIGBREAK"):
+        sig = getattr(signal, sig_name, None)
+        if sig is None:
+            continue
+        try:
+            signal.signal(sig, handle_exit_signal)
+        except (ValueError, OSError):
+            logger.debug("シグナルハンドラの登録をスキップしました: %s", sig_name, exc_info=True)
 
     @app.get("/health")
     async def health() -> Dict[str, Any]:
@@ -246,16 +316,10 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     @app.post("/api/shutdown")
     async def shutdown() -> Dict[str, Any]:
         """llama-server を停止してからプロセスを終了する（Electron 終了時に呼ばれる）"""
-        import os
+        release_model_resources(clear_active_model=False)
 
         async def _do_shutdown():
-            await asyncio.sleep(0.2)  # レスポンスを返してから実行
-            if llm_container.get("llm") is not None:
-                try:
-                    llm_container["llm"].shutdown()
-                except Exception:
-                    pass
-                llm_container["llm"] = None
+            await asyncio.sleep(0.2)
             os._exit(0)
 
         asyncio.create_task(_do_shutdown())
@@ -336,25 +400,8 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
     async def unload_model() -> Dict[str, Any]:
         if llm_container.get("llm") is None:
             return {"ok": False, "message": "モデルはすでにアンロード済みです"}
-
-        import gc
-
-        llm_container["llm"].shutdown()
-        llm_container["llm"] = None
-        app_state["active_model_key"] = ""
-        gc.collect()
-
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass
-
-        current = load_settings()
-        current["active_model_key"] = ""
-        save_settings(current)
+        release_model_resources(clear_active_model=True)
+        cleanup_state["done"] = False
 
         return {"ok": True, "message": "アンロード完了。VRAMを解放しました"}
 
@@ -372,21 +419,10 @@ def create_app(config: dict, llm_container: dict) -> FastAPI:
             return {"ok": True, "message": f"{model_key} はすでに使用中です"}
 
         try:
-            import gc
-
             old_llm = llm_container.get("llm")
             if old_llm is not None:
-                old_llm.shutdown()
-                del old_llm
-                llm_container["llm"] = None
-                gc.collect()
-                try:
-                    import torch
-
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                except ImportError:
-                    pass
+                release_model_resources(clear_active_model=False)
+                cleanup_state["done"] = False
 
             model_config = config.get("model", {})
             new_llm = LLMHandler(model_path=model_path, config=model_config)

@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 # <think>...</think> タグのパターン
 THINKING_PATTERN = re.compile(r"<think>(.*?)</think>", re.DOTALL)
 _MAX_TAG_LEN = len("</think>")
+_CONTROL_TOKEN_PATTERN = re.compile(r"<\|[^>\r\n]*\|>|<[^>\r\n]*channel[^>\r\n]*>")
+_CONTROL_THOUGHT_LINE_PATTERN = re.compile(r"(?im)^[ \t]*thought[ \t]*\r?\n?")
+_LEADING_ARTIFACT_PATTERN = re.compile(r"\A(?:\s*---\s*(?:\r?\n|$))+")
+_VISIBLE_TEXT_HOLDBACK = 64
 
 _DEFAULT_SERVER_PORT = 8766
 
@@ -267,6 +271,12 @@ class LLMHandler:
                 except json.JSONDecodeError:
                     continue
 
+    def _sanitize_stream_delta(self, text: str) -> str:
+        """制御トークンが可視テキストに漏れないよう除去する。"""
+        cleaned = _CONTROL_TOKEN_PATTERN.sub("", text)
+        cleaned = _CONTROL_THOUGHT_LINE_PATTERN.sub("", cleaned)
+        return cleaned
+
     def create_chat_completion_stream(
         self,
         messages: list,
@@ -276,7 +286,32 @@ class LLMHandler:
         game_engine 向け: メッセージを直接受け取り OpenAI 形式のチャンクを yield する。
         各チャンクは {"choices": [{"delta": {"content": "..."}}]} 形式。
         """
-        return self._stream_chat_completion(messages, cfg)
+        pending = ""
+        has_emitted_visible_text = False
+        for chunk in self._stream_chat_completion(messages, cfg):
+            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+            if not delta:
+                continue
+
+            pending += delta
+            if len(pending) <= _VISIBLE_TEXT_HOLDBACK:
+                continue
+
+            emit_len = len(pending) - _VISIBLE_TEXT_HOLDBACK
+            emit_text = self._sanitize_stream_delta(pending[:emit_len])
+            pending = pending[emit_len:]
+            if not has_emitted_visible_text:
+                emit_text = _LEADING_ARTIFACT_PATTERN.sub("", emit_text)
+            if emit_text:
+                has_emitted_visible_text = True
+                yield {"choices": [{"delta": {"content": emit_text}}]}
+
+        if pending:
+            emit_text = self._sanitize_stream_delta(pending)
+            if not has_emitted_visible_text:
+                emit_text = _LEADING_ARTIFACT_PATTERN.sub("", emit_text)
+            if emit_text:
+                yield {"choices": [{"delta": {"content": emit_text}}]}
 
     # ------------------------------------------------------------------
     # 高レベル生成（thinking/answer 分離）
@@ -321,7 +356,7 @@ class LLMHandler:
         state = "answer" if not enable_thinking else "preamble"
         _filter_thinking = not enable_thinking
 
-        for chunk in self._stream_chat_completion(messages, cfg):
+        for chunk in self.create_chat_completion_stream(messages, cfg):
             delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
             if not delta:
                 continue
